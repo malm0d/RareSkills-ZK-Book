@@ -1,22 +1,66 @@
-# Module 2: ZK-SNARKS PArt 1 (Groth16)
+## Foundry
 
-## Covered in this Directory
-Chapter 1: [Bilinear Pairings]()
+**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
 
-Chapter 2: [Rank 1 Constraint Systems (R1CS)]()
+Foundry consists of:
 
-Chapter 3: [A Zero Knowledge Proof with an R1CS]()
+-   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
+-   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
+-   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
+-   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
 
-Chapter 4: [Lagrange Interpolation with Python]()
+## Documentation
 
-Chapter 5: [The Schwartz-Zippel Lemma]()
+https://book.getfoundry.sh/
 
-Chapter 6: [Quadratic Arithmetic Programs]()
+## Usage
 
-Chapter 7: [R1CS to QAP in Python]()
+### Build
 
-Chapter 8: [Trusted Setup]()
+```shell
+$ forge build
+```
 
-Chapter 9: [Evaluating a QAP on a Trusted Setup]()
+### Test
 
-Chapter 10: [Groth16 Explained]()
+```shell
+$ forge test
+```
+
+### Format
+
+```shell
+$ forge fmt
+```
+
+### Gas Snapshots
+
+```shell
+$ forge snapshot
+```
+
+### Anvil
+
+```shell
+$ anvil
+```
+
+### Deploy
+
+```shell
+$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+```
+
+### Cast
+
+```shell
+$ cast <subcommand>
+```
+
+### Help
+
+```shell
+$ forge --help
+$ anvil --help
+$ cast --help
+```
