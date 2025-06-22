@@ -98,3 +98,5 @@ Thus we arrive at the elliptic curve bilinear pairing property:
 $$
 e(aG, bG) = e(abG, G) = e(G, abG)
 $$
+
+## What is $e(P,Q)$ Returning?
