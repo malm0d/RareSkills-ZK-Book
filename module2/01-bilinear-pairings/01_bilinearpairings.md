@@ -56,7 +56,7 @@ $$
 ### In more depth
 Let $G$ be an additive cyclic group with curve order $n$ (which is prime), with generator $G_1$. And let $G_T$ be the multiplicative cyclic group of the same curve order.
 
-(FYI: output of a bilinear pairing is usually an element of a multiplicative group of a finite field)
+(FYI: output of a bilinear pairing is usually an element of a multiplicative cyclic group of a finite field)
 
 A bilinear pairing is a map:
 $$
@@ -100,3 +100,22 @@ e(aG, bG) = e(abG, G) = e(G, abG)
 $$
 
 ## What is $e(P,Q)$ Returning?
+As mentioned above, the output of a bilinear pairing is an element of a multiplicative cyclic group of a finite field (or simply: an element of a finite cyclic group). This group is referred to as $G_T$.
+
+However, it is beyond the scope that we need to know how it is mathematically derived because it is too complex: "To be honest, the output is so mathematically scary that it would be counterproductive to try to really explain it."
+
+Technically, the output $e(P,Q)$ is constrained to a subgroup of $G_T$ with the same prime curve order as $G_1$ and $G_2$ (more on $G_2$ later).
+
+Or to be even more technical, the output of a bilinear pairing is an element of $G_T$, a multiplicative subgroup of order $r$ within a finite field extension $\mathbb{F}^{*}_{q^k}$ where $k$ is the embedding degree.
+
+It is best to treat $e(P,Q)$ as a black box, similar to how we treat hash functions (such as `keccak256) like black boxes. In fact, cryptography papers also treat bilinear pairings as black boxes.
+
+But despite bilinear pairings being treated as a black box, we still know a lot about the properties of the output, which is an element of $G_T$:
+
+- $G_T$ is a cyclic group, which means it has a closed binary operator.
+- The binary operator of $G_T$ is associative.
+- $G_T$ has an identity element.
+- Every element in $G_T$ has an inverse.
+- Since the group is cyclic, it has a generator.
+- Because the group is cyclic and finite, then finite cyclic groups (groups where all elements are powers of a single generator $g$) are homomorphic to $G_T$
+- That is, we have some way to homomorphically map elements in a finite field to elements in $G_T$.
