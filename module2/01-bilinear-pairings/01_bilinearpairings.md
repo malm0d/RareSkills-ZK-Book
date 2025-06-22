@@ -94,7 +94,7 @@ e(abG,G) = e(G,G)^{ab} \\[8pt]
 e(G,abG) = e(G,G)^{ab}
 $$
 
-Thus we arrive at the property:
+Thus we arrive at the elliptic curve bilinear pairing property:
 $$
 e(aG, bG) = e(abG, G) = e(G, abG)
 $$
