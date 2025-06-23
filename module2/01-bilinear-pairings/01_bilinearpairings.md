@@ -222,8 +222,10 @@ $$
 - Also:
 
 ```math
+\begin{aligned}
 e(5G_1, G_2) = e(G_1, G_2)^{5} = e(O, G_2) = 1 \ (by \ definition) \\[8pt]
 e(G_1, 7G_2) = e(G_1, G_2)^{7} = e(G_1, O) = 1 \ (by \ definition)
+\end{aligned}
 ```
 
 - From the above, $e(G_1,G_2)$ must satisfy:
