@@ -15,11 +15,11 @@ We know conceptually that in elliptic curves, scalar multiplication is repeated 
 
 Given an assumption: $pq = r$, what we are trying to do is take the EC points:
 
-$$
+```math
 P = pG \\
 Q = qG \\
 R = rG
-$$
+```
 
 And convince a verifier that multiplying of the discrete logs of $P$ and $Q$ yields the discrete log of $R$.
 
