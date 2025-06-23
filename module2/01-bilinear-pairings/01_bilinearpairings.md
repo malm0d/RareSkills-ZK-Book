@@ -249,4 +249,5 @@ $$
 $$
 e(G_1,G_2) = 1 \hspace{0.2cm} \forall \hspace{0.2cm} G_1, G_2
 $$
-##
+
+## The $G_2$ point in Python
