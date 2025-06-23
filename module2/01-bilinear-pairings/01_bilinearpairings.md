@@ -92,13 +92,13 @@ The pairing acts like a homomorphism that translates “add $a$ times” in the 
 
 Since:
 
-$$
+```math
 \begin{aligned}
 e(aG,bG) &= e(G,bG)^a \\[4pt]
             &= \bigl(e(G,\, G)^a\bigr)^{\,b} \\[4pt]
             &= e(G,\, G)^{ab}\, .
 \end{aligned}
-$$
+```
 
 And as such:
 
