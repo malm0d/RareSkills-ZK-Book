@@ -181,7 +181,15 @@ from py_ecc.bn128 import G1, G2
 ```
 
 ## Field Extensions and the $G_2$ point in Python
+Bilinear pairings are rather agnostic to the kinds of groups we opt for, but Ethereum's $G_2$ uses ellipictic curves with field extensions. If we want to be able to read Solidity code that uses ZK-SNARKS, we need to have a rough idea of what these are.
 
+Usually EC points are thought of as two points $x$ and $y$. With field extensions, the $x$ and $y$ themselves become TWO-DIMENSIONAL objects $(x,y)$ pairs.
+
+This is analogous to how complex numbers "extend" real numbers and turn them into something with two-dimensions (a real component and an imaginary component).
+
+A field extension is a very abstract concept, and frankly, the relationship between a field and its extension doesn’t matter from a purely functional concept.
+
+Just think of it this way: An elliptic curve in $G_2$ is an elliptic curve where both the $x$ and the $y$ element are two-dimensional objects. In other words, a $G_2$ point is a pair of tuples: $((x_0,x_1), \space (y_0,y_1))$.
 
 ## Why must $G_1$ and $G_2$ have the same order?
 It is important for $G_1$ and $G_2$ (and by extension $G_T$) to have the same order (number of points) so that the bilinear pairing $e: G_1 \times G_2 \rightarrow G_T$ can exist.
@@ -215,7 +223,7 @@ e(5G_1, 7G_2) = e(G_1, G_2)^{35} = e(O, O) = 1 \ (by \ definition)
 $$
 
 - Since $G_T$'s order must divide both $r_1$ and $r_2$ (to avoid contradictions), the only solution is $e(G_1, G_2)^{35} = 1$. This forces $e(G_1,G_2) = 1$ for all $G_1$ and $G_2$, thus making the bilinear pairing degenerate (useless for cryptography).
-    - This is connected to Lagrange's Theorem: The order of any element in a group must divide the order of the group.
+    - This is connected to Lagrange's Theorem: The order of any subgroup (and consequently, the order of any element) of a finite group must divide the order of the group.
         - Since $e(G_1, G_2) \in G_T$, its order must divide both $r_1 = 5$ and $r_2 = 7$.
         - The only common divisor is 1, so $e(G_1,G_2)$ must have $r = 1$.
 
