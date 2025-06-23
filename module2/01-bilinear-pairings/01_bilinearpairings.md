@@ -103,8 +103,10 @@ e(aG,bG) &= e(G,bG)^a \\[4pt]
 And as such:
 
 ```math
+\begin{aligned}
 e(abG,G) = e(G,G)^{ab} \\[8pt]
 e(G,abG) = e(G,G)^{ab}
+\end{aligned}
 ```
 
 Thus we arrive at the elliptic curve bilinear pairing property:
