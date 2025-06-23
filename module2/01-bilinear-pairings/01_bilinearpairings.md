@@ -14,23 +14,29 @@ Bilinear pairings allow us to take three numbers: $(a, b, c)$, where $ab = c$, a
 We know conceptually that in elliptic curves, scalar multiplication is repeated point addition. When a scalar is multiplied by an EC point, another EC point is produced (group theory). That is $P = pG$ where $p$ is the scalar (the discrete log), and $G$ is the generator. And given $P$ and $G$, we cannot solve for $p$.
 
 Given an assumption: $pq = r$, what we are trying to do is take the EC points:
+
 $$
 P = pG \\
 Q = qG \\
 R = rG
 $$
+
 And convince a verifier that multiplying of the discrete logs of $P$ and $Q$ yields the discrete log of $R$.
 
 And if: $pq = r$, and given: $P$, $Q$, and $R$, then we want a function:
+
 $$
 f(P, Q) = R
 $$
+
 such that it does not equate to $R$ when $pq \neq r$. And that this will hold true for all possible combinations of $p$, $q$, and $r$ in the elliptic curve group.
 
 However, $R$ is not usually expressed as such when using bilinear pairings, rather:
+
 $$
 f(P,Q) = f(R,G)
 $$
+
 Where $G$ is the generator and can be though of as: $1$. For instance, since $pG$ means we added $G$ to itself $p$ times, then a simple $G$ just means nothing was done to $G$ (left as is). Conceptually this is the same as saying: $P \times Q = R \times 1$.
 
 The bilinear pairing is thus a function that when we pass two EC points, we get an output that corresponds to the product of the discrete logs of the two EC points that were passed into the function.
@@ -39,6 +45,7 @@ A bilinear pairing is usually written as: $e(P, Q)$. Note that $e$ has nothing t
 
 ## Generalization, checking if two products are equal
 If given four EC points: $P_1$, $P_2$, $Q_1$, $Q_2$, and that the discrete logs of $P_1$, and $P_2$ have the same product as the discrete logs of $Q_1$ and $Q_2$ (that is: $p_1 \cdot p_2 = q_1 \cdot q_2$). Using a bilinear pairing, we can verify this is true without knowing any of the discrete logs $p_1$, $p_2$, $q_1$, and $q_2$. Simply:
+
 $$
 e(P_1, P_2) \stackrel{?}{=} e(Q_1, Q_2)
 $$
@@ -49,6 +56,7 @@ Bilinear means that if a function takes two arguments, and one argument is held 
 That is, if $f(x,y)$ is bilinear and $c$ is a constant, then $z = f(x,c)$ varies linearly with $x$, and $z = f(y,c)$ varies linearly with $y$.
 
 We can therefore infer that that an elliptic curve bilinear pairing has the following property:
+
 $$
 f(aG, bG) = f(abG, G) = f(G, abG)
 $$
@@ -59,9 +67,11 @@ Let $G$ be an additive cyclic group with curve order $n$ (which is prime), with 
 (FYI: output of a bilinear pairing is usually an element of a multiplicative cyclic group of a finite field)
 
 A bilinear pairing is a map:
+
 $$
 e:G \times G \rightarrow G_T
 $$
+
 such that for every elliptic curve points $P, Q \in G$, and scalars $a, b \in \mathbb{Z_n}$:
 
 - Linearity in the first input (slot): $e(aP, Q) = e(P, Q)^a$
@@ -73,6 +83,7 @@ To elaborate further, in a bilinear pairing, we are moving between two kinds of 
 - $G_T$ (finite field subgroup) under multiplication ($\times$), where the "linear" action is exponentiation $g^a = g \times ... \times g$ (multiply $g$ by itself $a$ times).
 
 The pairing acts like a homomorphism that translates “add $a$ times” in the curve into “multiply $a$ times” in the finite field. That is the "linear" action (repeated addition) in the domain $G$ becomes "exponentiation" (repeated multiplication) in the target $G_T$:
+
 $$
 \underbrace{aP}_{\text{add }a\text{ times}}
 \;\xrightarrow{\;e\;}
@@ -80,6 +91,7 @@ $$
 $$
 
 Since:
+
 $$
 \begin{aligned}
 e(aG,bG) &= e(G,bG)^a \\[4pt]
@@ -89,12 +101,14 @@ e(aG,bG) &= e(G,bG)^a \\[4pt]
 $$
 
 And as such:
+
 $$
 e(abG,G) = e(G,G)^{ab} \\[8pt]
 e(G,abG) = e(G,G)^{ab}
 $$
 
 Thus we arrive at the elliptic curve bilinear pairing property:
+
 $$
 e(aG, bG) = e(abG, G) = e(G, abG)
 $$
@@ -126,6 +140,7 @@ If we really want to know what $G_T$ "looks like", it is a 12-dimensional object
 
 ## Symmetric and Asymmetric Groups
 The notation $e(P,Q)$ implies that we are using the same elliptic curve group and generator point everywhere when we say:
+
 $$
 e(aG,bG) = e(abG,G)
 $$
@@ -133,6 +148,7 @@ $$
 In practice, however, it is easier to create bilinear pairings when the two input groups are different (but of the same order). That is, bilinear pairings often use asymmetric groups (with identical orders).
 
 Specifically:
+
 $$
 e(a,b) \rightarrow c \hspace{0.5cm} a \in G_1, \hspace{0.125cm} b \in G_2, \hspace{0.125cm} c \in G_T
 $$
@@ -140,6 +156,7 @@ $$
 None of the groups are the same: $G_1 \neq G_2 \neq G_T$.
 
 However the elliptic curve bilinear pairing property that we care about still holds:
+
 $$
 e(aG_1, bG_2) = e(abG_1, G_2) = e(G_1, abG_2)
 $$
@@ -149,6 +166,7 @@ In the above equation, $G_T$ is not explicitly shown, but that is the codomain (
 We could think of $G_1$ and $G_2$ as being different elliptic curve equations with different parameters (BUT THE SAME NUMBER OF POINTS), and that would be valid because they are different groups.
 
 In a symmetric pairing, the same elliptic curve group, for instance $G_1$, is used for both arguments of the bilinear pairing function. This means that the elliptic curve group and the generator point used in both arguments is the same. In such cases, the pairing is denoted as:
+
 $$
 e(aG_1, bG_1) = e(abG_1, G_1) = e(G_1, abG_1)
 $$
@@ -171,6 +189,7 @@ Consider $G_1$ and $G_2$ with order $r = 5$:
 - A bilinear pairing $e(G_1,G_2)$ generates $G_T$ which also has order $r = 5$
 
 - Bilinearity holds:
+
 $$
 e(2G_1, 3G_2) = e(G_1,G_2)^6 = e(G_1,G_2)^1 \hspace{0.125cm} (since \ 6 \equiv 1 \ mod \ 5)
 $$
@@ -182,11 +201,13 @@ Consider if $G_1$ has $r_1 = 5$, and $G_2$ has $r_2 = 7$:
 - We know $5G_1 = O \ (identity \ in \ G_1)$, and $7G_2 = O \ (identity \ in \ G_2)$
 
 - If bilinearity held, we'd expect:
+
 $$
 e(5G_1, 7G_2) = e(G_1, G_2)^{35}
 $$ 
 
 - But this would also mean:
+
 $$
 e(5G_1, 7G_2) = e(G_1, G_2)^{35} = e(O, O) = 1 \ (by \ definition)
 $$
@@ -197,12 +218,14 @@ $$
         - The only common divisor is 1, so $e(G_1,G_2)$ must have $r = 1$.
 
 - Also:
+
 $$
 e(5G_1, G_2) = e(G_1, G_2)^{5} = e(O, G_2) = 1 \ (by \ definition) \\[8pt]
 e(G_1, 7G_2) = e(G_1, G_2)^{7} = e(G_1, O) = 1 \ (by \ definition)
 $$
 
 - From the above, $e(G_1,G_2)$ must satisfy:
+
 $$
 e(G_1, G_2)^{5} = 1 \hspace{0.5cm} and \hspace{0.5cm} e(G_1, G_2)^{7} = 1
 $$
@@ -210,6 +233,7 @@ $$
 - And the only element in $G_T$ satifying this is $1$. Because $5$ and $7$ are coprime and the LCM is $35$, so we can see it as: $x^{35} = 1$ meaning $x = 1$
 
 - Thus: 
+
 $$
 e(G_1,G_2) = 1 \hspace{0.2cm} \forall \hspace{0.2cm} G_1, G_2
 $$
