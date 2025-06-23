@@ -102,10 +102,10 @@ e(aG,bG) &= e(G,bG)^a \\[4pt]
 
 And as such:
 
-$$
+```math
 e(abG,G) = e(G,G)^{ab} \\[8pt]
 e(G,abG) = e(G,G)^{ab}
-$$
+```
 
 Thus we arrive at the elliptic curve bilinear pairing property:
 
@@ -219,10 +219,10 @@ $$
 
 - Also:
 
-$$
+```math
 e(5G_1, G_2) = e(G_1, G_2)^{5} = e(O, G_2) = 1 \ (by \ definition) \\[8pt]
 e(G_1, 7G_2) = e(G_1, G_2)^{7} = e(G_1, O) = 1 \ (by \ definition)
-$$
+```
 
 - From the above, $e(G_1,G_2)$ must satisfy:
 
