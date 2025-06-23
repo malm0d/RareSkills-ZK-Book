@@ -108,7 +108,7 @@ Technically, the output $e(P,Q)$ is constrained to a subgroup of $G_T$ with the 
 
 Or to be even more technical, the output of a bilinear pairing is an element of $G_T$, a multiplicative subgroup of order $r$ within a finite field extension $\mathbb{F}^{*}_{q^k}$ where $k$ is the embedding degree.
 
-It is best to treat $e(P,Q)$ as a black box, similar to how we treat hash functions (such as `keccak256) like black boxes. In fact, cryptography papers also treat bilinear pairings as black boxes.
+It is best to treat $e(P,Q)$ as a black box, similar to how we treat hash functions (such as `keccak256`) like black boxes. In fact, cryptography papers also treat bilinear pairings as black boxes.
 
 But despite bilinear pairings being treated as a black box, we still know a lot about the properties of the output, which is an element of $G_T$:
 
@@ -119,3 +119,98 @@ But despite bilinear pairings being treated as a black box, we still know a lot 
 - Since the group is cyclic, it has a generator.
 - Because the group is cyclic and finite, then finite cyclic groups (groups where all elements are powers of a single generator $g$) are homomorphic to $G_T$
 - That is, we have some way to homomorphically map elements in a finite field to elements in $G_T$.
+
+Because the group $G_T$ is cyclic, we have a notion of $G_T$, $2G_T$, $3G_T$, and so forth. The binary operator of $G_T$ is roughly what we could call "multiplication", so $8G_T = 2G_T * 4G_T$.
+
+If we really want to know what $G_T$ "looks like", it is a 12-dimensional object. The identity element is: $(1,0,0,0,0,0,0,0,0,0,0,0)$, also known as the multiplicative identity 1 in the finite field extension where $G_T$ resides.
+
+## Symmetric and Asymmetric Groups
+The notation $e(P,Q)$ implies that we are using the same elliptic curve group and generator point everywhere when we say:
+$$
+e(aG,bG) = e(abG,G)
+$$
+
+In practice, however, it is easier to create bilinear pairings when the two input groups are different (but of the same order). That is, bilinear pairings often use asymmetric groups (with identical orders).
+
+Specifically:
+$$
+e(a,b) \rightarrow c \hspace{0.5cm} a \in G_1, \hspace{0.125cm} b \in G_2, \hspace{0.125cm} c \in G_T
+$$
+
+None of the groups are the same: $G_1 \neq G_2 \neq G_T$.
+
+However the elliptic curve bilinear pairing property that we care about still holds:
+$$
+e(aG_1, bG_2) = e(abG_1, G_2) = e(G_1, abG_2)
+$$
+
+In the above equation, $G_T$ is not explicitly shown, but that is the codomain (output) space of $e(G_1, G_2)$. That is, the bilinear pairing maps pairs of elements from groups $G_1$ and $G_2$ to elements in the target group $G_T$.
+
+We could think of $G_1$ and $G_2$ as being different elliptic curve equations with different parameters (BUT THE SAME NUMBER OF POINTS), and that would be valid because they are different groups.
+
+In a symmetric pairing, the same elliptic curve group, for instance $G_1$, is used for both arguments of the bilinear pairing function. This means that the elliptic curve group and the generator point used in both arguments is the same. In such cases, the pairing is denoted as:
+$$
+e(aG_1, bG_1) = e(abG_1, G_1) = e(G_1, abG_1)
+$$
+
+In practice, asymmetric groups are used, and the difference between the groups $G_1$ and $G_2$ will be explained shortly.
+
+$G_1$ is the same group that was used in previous chapeters in the ZK book, and in the context of Ethereum, it is the same $G_1$ that we import from the `py_ecc.bn128` library. $G_2$ can also be imported from the same library.
+```python
+from py_ecc.bn128 import G1, G2
+```
+
+## Field Extensions and the $G_2$ point in Python
+
+
+## Why must $G_1$ and $G_2$ have the same order?
+It is important for $G_1$ and $G_2$ (and by extension $G_T$) to have the same order (number of points) so that the bilinear pairing $e: G_1 \times G_2 \rightarrow G_T$ can exist.
+
+Consider $G_1$ and $G_2$ with order $r = 5$:
+
+- A bilinear pairing $e(G_1,G_2)$ generates $G_T$ which also has order $r = 5$
+
+- Bilinearity holds:
+$$
+e(2G_1, 3G_2) = e(G_1,G_2)^6 = e(G_1,G_2)^1 \hspace{0.125cm} (since \ 6 \equiv 1 \ mod \ 5)
+$$
+
+- The exponents "wrap around correctly" because $G_T$ also has order 5.
+
+Consider if $G_1$ has $r_1 = 5$, and $G_2$ has $r_2 = 7$:
+
+- We know $5G_1 = O \ (identity \ in \ G_1)$, and $7G_2 = O \ (identity \ in \ G_2)$
+
+- If bilinearity held, we'd expect:
+$$
+e(5G_1, 7G_2) = e(G_1, G_2)^{35}
+$$ 
+
+- But this would also mean:
+$$
+e(5G_1, 7G_2) = e(G_1, G_2)^{35} = e(O, O) = 1 \ (by \ definition)
+$$
+
+- Since $G_T$'s order must divide both $r_1$ and $r_2$ (to avoid contradictions), the only solution is $e(G_1, G_2)^{35} = 1$. This forces $e(G_1,G_2) = 1$ for all $G_1$ and $G_2$, thus making the bilinear pairing degenerate (useless for cryptography).
+    - This is connected to Lagrange's Theorem: The order of any element in a group must divide the order of the group.
+        - Since $e(G_1, G_2) \in G_T$, its order must divide both $r_1 = 5$ and $r_2 = 7$.
+        - The only common divisor is 1, so $e(G_1,G_2)$ must have $r = 1$.
+
+- Also:
+$$
+e(5G_1, G_2) = e(G_1, G_2)^{5} = e(O, G_2) = 1 \ (by \ definition) \\[8pt]
+e(G_1, 7G_2) = e(G_1, G_2)^{7} = e(G_1, O) = 1 \ (by \ definition)
+$$
+
+- From the above, $e(G_1,G_2)$ must satisfy:
+$$
+e(G_1, G_2)^{5} = 1 \hspace{0.5cm} and \hspace{0.5cm} e(G_1, G_2)^{7} = 1
+$$
+
+- And the only element in $G_T$ satifying this is $1$. Because $5$ and $7$ are coprime and the LCM is $35$, so we can see it as: $x^{35} = 1$ meaning $x = 1$
+
+- Thus: 
+$$
+e(G_1,G_2) = 1 \hspace{0.2cm} \forall \hspace{0.2cm} G_1, G_2
+$$
+##
