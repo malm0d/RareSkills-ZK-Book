@@ -84,11 +84,11 @@ To elaborate further, in a bilinear pairing, we are moving between two kinds of 
 
 The pairing acts like a homomorphism that translates “add $a$ times” in the curve into “multiply $a$ times” in the finite field. That is the "linear" action (repeated addition) in the domain $G$ becomes "exponentiation" (repeated multiplication) in the target $G_T$:
 
-$$
+```math
 \underbrace{aP}_{\text{add }a\text{ times}}
 \;\xrightarrow{\;e\;}
 \underbrace{e(P,Q)^a}_{\text{multiply }a\text{ times}}
-$$
+```
 
 Since:
 
