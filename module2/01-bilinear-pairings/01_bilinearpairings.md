@@ -219,7 +219,7 @@ $$
 - But this would also mean:
 
 $$
-e(5G_1, 7G_2) = e(G_1, G_2)^{35} = e(O, O) = 1 \ (by \ definition)
+e(5G_1, 7G_2) = e(G_1, G_2)^{35} = e(O, O) = 1 \ \text{(by definition)}
 $$
 
 - Since $G_T$'s order must divide both $r_1$ and $r_2$ (to avoid contradictions), the only solution is $e(G_1, G_2)^{35} = 1$. This forces $e(G_1,G_2) = 1$ for all $G_1$ and $G_2$, thus making the bilinear pairing degenerate (useless for cryptography).
@@ -231,8 +231,8 @@ $$
 
 ```math
 \begin{aligned}
-e(5G_1, G_2) = e(G_1, G_2)^{5} = e(O, G_2) = 1 \ (by \ definition) \\[8pt]
-e(G_1, 7G_2) = e(G_1, G_2)^{7} = e(G_1, O) = 1 \ (by \ definition)
+e(5G_1, G_2) = e(G_1, G_2)^{5} = e(O, G_2) = 1 \ \text{(by definition)} \\[8pt]
+e(G_1, 7G_2) = e(G_1, G_2)^{7} = e(G_1, O) = 1 \ \text{(by definition)}
 \end{aligned}
 ```
 
@@ -305,7 +305,7 @@ R = r\,g_1 \in G_1.
 \end{cases}
 $$
 
-Where: $P, R \in G_1$, and $Q, g_2 \in G_2$.
+Where: $g_1$ is a fixed generator of $G_1$, and $g_2$ is a fixed generator of $G_2$.
 
 The LHS is equivalent to:
 
@@ -340,3 +340,5 @@ assert eq(pairing(Q, P), pairing(G2, R))
 ```
 
 Note that the python library requires that the points belonging to $G_2$ be passed as the first argument to `pairing`.
+
+## Equality of Products
