@@ -251,3 +251,92 @@ e(G_1,G_2) = 1 \hspace{0.2cm} \forall \hspace{0.2cm} G_1, G_2
 $$
 
 ## The $G_2$ point in Python
+```python
+from py_ecc.bn128 import G1, G2, pairing, add, multiply, eq
+
+print(G1)
+# (1, 2)
+
+print(G2)
+#((10857046999023057135944570762232829481370756359578518086990519993285655852781, 11559732032986387107991004021392285783925812861821192530917403151452391805634), (8495653923123431417604973247489272438418190587263600148770280649306958101930, 4082367875863433681332203403145435568316851327593401208105741076214120093531))
+```
+Notice that $G_2$ is a pair of tuples. The first tuple is the two-dimensional $x$ point, and the second tuple is the two-dimensional $y$ point.
+
+$G_1$ and $G_2$ are the generator points for their respective groups; and they both have the same curve order (number of points on the curve):
+```python
+from py_ecc.bn128 import G1, G2, eq, curve_order, multiply, eq, curve_order
+
+x = 10 # chosen randomly
+assert eq(multiply(G2, x + curve_order), multiply(G2, x))
+assert eq(multiply(G1, x + curve_order), multiply(G1, x))
+```
+
+The behavior of $G_2$ is the same as other cyclic groups, especially the $G_1$ group we are familiar with. This means we can obtain other $G_2$ points with scalar multiplication (essentially repeated addition) as expected like how we observed with $G_1$ points.
+```python
+print(eq(add(G1, G1), multiply(G1, 2))) # True
+
+print(eq(add(G2, G2), multiply(G2, 2))) # True
+```
+
+It should be obvious that we can only add elements from the same group (adding elements from different group violates closure thus breaking the group structure):
+```python
+add(G1, G2) # TypeError
+```
+
+On a side note, the `py_ecc` library overrides some arithmetic operators in python, meaning we can do the following:
+```python
+print(G1 + G1 + G1 == 3 * G1) # True
+
+#The above is the same as this:
+eq(add(add(G1, G1), G1), multiply(G1, 3)) # True
+```
+
+## Bilinear Pairings in Python
+At the beginning of the chapter, we said that bilinear pairings can be used to check if the discrete logs of $P$ and $Q$ multiply to yield the discrete log of $R$. That is, $P = pG$, $Q = qG$, $R = rG$, and that $pq = r$.
+
+That is, we specifically want:
+
+$$
+e(P,Q) = e(R,g_2), \quad\text{with}\quad
+\begin{cases}
+P = p\,g_1 \in G_1,\\
+Q = q\,g_2 \in G_2,\\
+R = r\,g_1 \in G_1.
+\end{cases}
+$$
+
+Where: $P, R \in G_1$, and $Q, g_2 \in G_2$.
+
+The LHS is equivalent to:
+
+$$
+e(P,Q) = e(pg_1, qg_1) = e(g1, g2)^{pq}
+$$
+
+And the RHS is equivalent to:
+
+$$
+e(R,g_2) = e(rg_1, g_2) = e(g1, g2)^{rq}
+$$
+
+Because $e(g_1, g_2)$ is a generator of $G_T$, the two values are equal if:
+
+$$
+pq \equiv r \ (mod \ r)
+$$
+
+which is exactly the discrete-log reltaion we are testing.
+
+Here's how it can be achieved in Python:
+```Python
+from py_ecc.bn128 import G1, G2, pairing, multiply, eq
+
+P = multiply(G1, 3)
+Q = multiply(G2, 8)
+
+R = multiply(G1, 24)
+
+assert eq(pairing(Q, P), pairing(G2, R))
+```
+
+Note that the python library requires that the points belonging to $G_2$ be passed as the first argument to `pairing`.
