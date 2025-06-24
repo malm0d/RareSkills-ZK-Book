@@ -672,7 +672,9 @@ $$
 -ab + cd \equiv 0 \quad(\text{mod} \ r) \quad \leftrightarrow \quad ab \equiv cd \quad(\text{mod} \ r)
 $$
 
-```python
+Consider the discrete logarithms: `a`, `b`, `c`, and `d`.
+
+```
 a = 4
 b = 3
 c = 6
@@ -726,4 +728,55 @@ dG2_x1 = 18029695676650738226693292988307914797657423701064905010927197838374790
 dG2_x2 = 14583779054894525174450323658765874724019480979794335525732096752006891875705,
 dG2_y1 = 2140229616977736810657479771656733941598412651537078903776637920509952744750,
 dG2_y2 = 11474861747383700316476719153975578001603231366361248090558603872215261634898
+```
+
+The individual discrete logarithm values are now encrypted into points in the $G_1$ and $G_2$ groups. And someone else, or another program, can verify that we have computed $e(A_1, B_2) \cdot e(C_1, D_2) = 0$ correctly without even knowing the individual values of `a`, `b`, `c`, or `d`.
+
+The following is a Solidity smart contract that uses the ecPairing precompile (`0x08`) to confirm that we computed the euqations with valid values.
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.24;
+
+contract Pairings {
+    /**
+     * returns true if == 0 (-ab + cd = 0)
+     * returns false if != 0 (-ab + cd =/= 0)
+     * reverts with "Wrong pairing" if invalid pairing
+    */
+    function run(uint256[12] memory input) public view returns (bool) {
+        //staticcall(gas, addr, argsOffset, argsSize, retOffset, retSize)
+        //argsOffset: `input` -> the pointer of the input array (uint256[12])
+        //argsSize: `0x0180` -> 384 bytes
+        //retOffset: `input` -> reuse the already-allocated memory
+        assembly {
+            let success := staticcall(gas(), 0x08, input, 0x0180, input, 0x20)
+            if success {
+                return(input, 0x20)
+            }
+        }
+        revert("Wrong pairing");
+    }   
+}
+
+```
+
+And we yse the following Foundry test to deploy and call the `Pairings` contract, to confirm the ecPairing calculation.
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.24;
+
+import "forge-std/Test.sol";
+import "../src/Pairings.sol";
+
+contract PairingsTest is Test {
+    Pairings pairings;
+
+    function setUp() public {
+        pairings = new Pairings();
+    }
+
+    function testPairings() public view {
+        
+    }
+}
 ```
