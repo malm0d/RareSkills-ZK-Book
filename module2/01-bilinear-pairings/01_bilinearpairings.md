@@ -342,3 +342,151 @@ assert eq(pairing(Q, P), pairing(G2, R))
 Note that the python library requires that the points belonging to $G_2$ be passed as the first argument to `pairing`.
 
 ## Equality of Products
+At the beginning of the chapter, we also said that given EC points, a bilinear pairing can verify that the discrete logs of $P_1$, and $P_2$ have the same product as the discrete logs of $Q_1$ and $Q_2$:
+
+$$
+e(P_1, P_2) \stackrel{?}{=} e(Q_1, Q_2)
+$$
+
+This is how it can be achieved in Python:
+```python
+from py_ecc.bn128 import G1, G2, pairing, multiply, eq
+
+P_1 = multiply(G1, 3)
+P_2 = multiply(G2, 8)
+
+Q_1 = multiply(G1, 6)
+Q_2 = multiply(G2, 4)
+
+assert eq(pairing(P_2, P_1), pairing(Q_2, Q_1))
+```
+
+## The Binary Operator of $G_T$
+Elements in $G_T$ are combined using "multiplication" but keep in mind that this is actually a syntactic override in Python:
+```python
+from py_ecc.bn128 import G1, G2, pairing, multiply, eq
+
+# 2 * 3 = 6
+P_1 = multiply(G1, 2) # 2G_1
+P_2 = multiply(G2, 3) # 3G_2
+
+
+# 4 * 5 = 20
+Q_1 = multiply(G1, 4) # 4G_1
+Q_2 = multiply(G2, 5) # 5G_2
+
+# 10 * 12 = 120 (6 * 20 = 120 also)
+R_1 = multiply(G1, 10) # 10G_1
+R_2 = multiply(G2, 12) # 12G_2
+
+# e(P1, P2) * e(Q1, Q2) =?= e(R1, R2)
+assert eq(pairing(P_2, P_1) * pairing(Q_2, Q_1), pairing(R_2, R_1))
+
+# Fails!
+```
+
+### What is happening to the code?
+The code above attempt to verify the following:
+
+$$
+e(2G_1, 3G_2) \ \cdot \ e(4G_1, 5G_2) \ \stackrel{?}{=} \ e(10G_1, 12G_2)
+$$
+
+Remeber the property of bilinear pairings:
+
+$$
+e(aG_1, bG_2) \ = \ e(abG_1, G_2) \ = \ e(G_1, abG_2) \ = \ e(G_1, G_2)^{ab}
+$$
+
+Thus the assertion fails because:
+
+$$
+e(2G_1, 3G_2) \cdot e(4G_1, 5G_2) = e(G_1,G_2)^{2 \cdot 3} \cdot e(G_1,G_2)^{4 \cdot 5} = e(G1, G2)^{6 + 20}
+$$
+
+And
+
+$$
+e(G1,G2)^{26} \neq e(G1,G2)^{120}
+$$
+
+### The Key Insight: $G_T$ is Multiplicative
+$G_T$ is a multiplicative group, that is, all elements in $G_T$ behave like "powers" of a base.
+
+Recall basic algebra:
+
+$$
+b^{x} \cdot b^{y} = b^{x+y}
+$$
+
+This is exactly what happens in any multiplicative group, including $G_T$.
+
+As $G_T$ is a multiplicative group, its operation is multiplication, but its structure is exponential due to pairings:
+
+$$
+e(aG_1, bG_2) = e(G_1, G_2)^{ab}
+$$
+
+We can think of $b$ as $e(G_1, G_2)$ as a fixed base, and so $e(2G_1, 3G_2)$ would be akin to $b^{6}$.
+
+Bilinear pairings convert elliptic curve additions (in $G_1$ and $G_2$) into "multiplications" in $G_T$, but the exponents come from scalar multiplications (another way to put it: pairings convert elliptic curve addition into exponentiation i.e. scalar multiplicativity multiplies exponents):
+
+$$
+e(aG_1, bG_2) = e(G_1, G_2)^{ab} \quad (\text{like} \ b^{ab})
+$$
+
+Thus to make the code work, we just change $R_1$ and $R_2$ to multiply to $26$.
+```python
+from py_ecc.bn128 import G1, G2, pairing, multiply, eq
+
+# 2 * 3 = 6
+P_1 = multiply(G1, 2)
+P_2 = multiply(G2, 3)
+
+# 4 * 5 = 20
+Q_1 = multiply(G1, 4)
+Q_2 = multiply(G2, 5)
+
+# 13 * 2 = 26
+R_1 = multiply(G1, 13)
+R_2 = multiply(G2, 2)
+
+# b ^ {2 * 3} * b ^ {4 * 5} = b ^ {13 * 2}
+# b ^ 6 * b ^ 20 = b ^ 26
+
+assert eq(pairing(P_2, P_1) * pairing(Q_2, Q_1), pairing(R_2, R_1))
+```
+
+Effectively computing:
+
+$$
+b^{2 \cdot 3} \ast b^{4 \cdot 5} = b^{13 \cdot 2}
+$$
+
+$$
+b^{6} \ast b^{20} = b^{26}
+$$
+
+## Bilinear Pairings in Ethereum
+
+### EIP 197 Specification
+The `py_ecc` library is maintained by the Ethereum Foundation and it is what powers the precompile at address `0x8` in the [PyEVM implementation](https://github.com/ethereum/py-evm).
+
+The Ethereum precompile defined in [EIP-197](https://eips.ethereum.org/EIPS/eip-197) works on elliptic curve points in $G_1$ and $G_2$, and implicitly works on points in $G_T$.
+
+The precompile takes in a list of $G_1$ and $G_2$ points laid out as follows:
+
+$$
+A_1, B_1, A_2, B_2,..., A_n, B_n : A_i \in G_1, B_i \in G_2 
+$$
+
+There were originally created as:
+```
+A₁ = a₁G1
+B₁ = b₁G2
+A₂ = a₂G1
+B₂ = b₂G2
+...
+Aₙ = aₙG1
+Bₙ = bₙG2
+```
