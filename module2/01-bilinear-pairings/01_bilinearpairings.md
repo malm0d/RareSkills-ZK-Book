@@ -747,7 +747,7 @@ contract Pairings {
         //staticcall(gas, addr, argsOffset, argsSize, retOffset, retSize)
         //argsOffset: `input` -> the pointer of the input array (uint256[12])
         //argsSize: `0x0180` -> 384 bytes
-        //retOffset: `input` -> reuse the already-allocated memory
+        //retOffset: `input` -> reuse the already-allocated memory from `input`
         assembly {
             let success := staticcall(gas(), 0x08, input, 0x0180, input, 0x20)
             if success {
@@ -760,7 +760,7 @@ contract Pairings {
 
 ```
 
-And we yse the following Foundry test to deploy and call the `Pairings` contract, to confirm the ecPairing calculation.
+And we use the following Foundry test to deploy and call the `Pairings` contract, to confirm the ecPairing calculation.
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
@@ -776,7 +776,102 @@ contract PairingsTest is Test {
     }
 
     function testPairings() public view {
-        
+        uint256 aG1_x = 3010198690406615200373504922352659861758983907867017329644089018310584441462;
+        uint256 aG1_y = 17861058253836152797273815394432013122766662423622084931972383889279925210507;
+
+        uint256 bG2_x1 = 2725019753478801796453339367788033689375851816420509565303521482350756874229;
+        uint256 bG2_x2 = 7273165102799931111715871471550377909735733521218303035754523677688038059653;
+        uint256 bG2_y1 = 2512659008974376214222774206987427162027254181373325676825515531566330959255;
+        uint256 bG2_y2 = 957874124722006818841961785324909313781880061366718538693995380805373202866;
+
+        uint256 cG1_x = 4503322228978077916651710446042370109107355802721800704639343137502100212473;
+        uint256 cG1_y = 6132642251294427119375180147349983541569387941788025780665104001559216576968;
+
+        uint256 dG2_x1 = 18029695676650738226693292988307914797657423701064905010927197838374790804409;
+        uint256 dG2_x2 = 14583779054894525174450323658765874724019480979794335525732096752006891875705;
+        uint256 dG2_y1 = 2140229616977736810657479771656733941598412651537078903776637920509952744750;
+        uint256 dG2_y2 = 11474861747383700316476719153975578001603231366361248090558603872215261634898;
+
+        uint256[12] memory points = [
+            aG1_x,
+            aG1_y,
+            bG2_x2,
+            bG2_x1,
+            bG2_y2,
+            bG2_y1,
+            cG1_x,
+            cG1_y,
+            dG2_x2,
+            dG2_x1,
+            dG2_y2,
+            dG2_y1
+        ];
+
+        bool x = pairings.run(points);
+        console2.log("result:", x);
     }
 }
 ```
+
+Note that the way $G_2$ points are arranged is not the same way Python lays out the $G_2$ points.
+
+This passes and prints out `true` to the console.
+
+Notice that the points: `aG1_x`, `aG1_y`, `bG2_x2`, `bG2_x1`, `bG2_y2`, `bG2_y1`, and etc, have been labeled by their variable name (`a`, `b`, `c`, `d`), which group they belong (`G1`, `G2`), and if they represent an `x` or a `y` of the elliptic curve point (for `G1`: `_x`, `_y`, and for `G2`: `_x1`, `_x2`, `_y1`, `_y2`).
+
+Also note that the exPairing precompile does not expect or require an array, and that using in-line assembly as above is optional. One can also do the same as such:
+```solidity
+//In Pairings.sol
+//Change parameter to `bytes calldata`
+function run(bytes calldata input) public view returns (bool) {
+    // optional, the precompile checks this too and reverts (with no error) if false, this helps narrow down possible errors
+    if (input.length % 192 != 0) revert("Points must be a multiple of 6");
+    (bool success, bytes memory data) = address(0x08).staticcall(input);
+    if (success) return abi.decode(data, (bool));
+    revert("Wrong pairing");
+}
+
+//In PairingsTest.sol
+function testPairings() public view {
+    uint256 aG1_x = 3010198690406615200373504922352659861758983907867017329644089018310584441462;
+    uint256 aG1_y = 17861058253836152797273815394432013122766662423622084931972383889279925210507;
+
+    uint256 bG2_x1 = 2725019753478801796453339367788033689375851816420509565303521482350756874229;
+    uint256 bG2_x2 = 7273165102799931111715871471550377909735733521218303035754523677688038059653;
+    uint256 bG2_y1 = 2512659008974376214222774206987427162027254181373325676825515531566330959255;
+    uint256 bG2_y2 = 957874124722006818841961785324909313781880061366718538693995380805373202866;
+
+    uint256 cG1_x = 4503322228978077916651710446042370109107355802721800704639343137502100212473;
+    uint256 cG1_y = 6132642251294427119375180147349983541569387941788025780665104001559216576968;
+
+    uint256 dG2_x1 = 18029695676650738226693292988307914797657423701064905010927197838374790804409;
+    uint256 dG2_x2 = 14583779054894525174450323658765874724019480979794335525732096752006891875705;
+    uint256 dG2_y1 = 2140229616977736810657479771656733941598412651537078903776637920509952744750;
+    uint256 dG2_y2 = 11474861747383700316476719153975578001603231366361248090558603872215261634898;
+
+    // Use abi.encode
+    bytes memory points = abi.encode(
+        aG1_x,
+        aG1_y,
+        bG2_x2,
+        bG2_x1,
+        bG2_y2,
+        bG2_y1,
+        cG1_x,
+        cG1_y,
+        dG2_x2,
+        dG2_x1,
+        dG2_y2,
+        dG2_y1
+    );
+
+    bool x = pairings.run(points);
+    console2.log("result:", x);
+}
+```
+
+This will pass and return true just like the initial implementation because it sends the exact same calldata to the precompile.
+
+The only difference is that in the first implementation, the test file sends an array of points to the pairing contract which uses inline-assembly to slice off the first 32 bytes (array length) and sends the rest to the precompile. (It is not actually slicing per se, it is because `input` already points at the first 32-byte word of the fixed-length array in memory: `uint256[12]`)
+
+And in the second implementation, the test file sends the abi encoded points to the pairing contract which forwards it as it is to the precompile.
