@@ -573,7 +573,7 @@ $$
 0 = e(-A_1, B_2) + e(α₁, β₂) + e(L₁, γ₂) + e(C₁, δ₂)
 $$
 
-Which, when we convert back to the multiplicative notation used in EIP-197, we get:
+Which, when we convert back to the multiplicative notation used in EIP-197, is "technically" the same as:
 
 $$
 1 = e(A_1, B_2)^{-1} \cdot e(α₁, β₂) \cdot e(L₁, γ₂) \cdot e(C₁, δ₂)
@@ -581,3 +581,149 @@ $$
 
 <hr>
 
+It is not just Groth16, most ZK algorithms have verification formula that looks like the above, which is why the precompile was designed to work with sums of pairings, rather than return the value of a single pairing.
+
+If we look at the verification code of [Tornado Cash](https://www.rareskills.io/post/how-does-tornado-cash-work), we can see it is doing the same:
+
+$$
+0 = e(-A, B) + e(α \cdot G_1, β \cdot G_2) + e(L, γ \cdot G_2) + e(C, δ \cdot G_2)
+$$
+
+```solidity
+    return Pairing.pairing(
+        Pairing.negate(_proof.A),
+        _proof.B,
+        vk.alfa1,
+        vk.beta2,
+        vk_x,
+        vk.gamma2,
+        _proof.C,
+        vk.delta2
+    );
+```
+
+Inside the `pairing` function is where the call to `address(8)` is done to complete the bilinear pairing calculation and to determine if the proof is valid or not.
+
+Sometimes, the group $G_T$ is referred to as $G_{12}$ in the context of EIP-197.
+
+### Sum of Discrete Logarithms
+The key insight here is the linear relationships in the exponents of the pairings:
+
+$$
+ab + cd = 0
+$$
+
+Then it must also be true, in the $G_{12}$ group that:
+
+$$
+A_1B_2 + C_1D_2 = 0_{12} \quad\text{where}\quad A_1,C_1 \in G_1, \ B_2,D_2 \in G_2
+$$
+
+For example, valid proofs satisfy algebraic constraints such as the above for secret scalars $a$, $b$, $c$, $d$.
+
+This translates to:
+
+$$
+e(A_1, B_2) \cdot e(C_1, D_2) = 1 \quad\text{(in multiplicative notation)}
+$$
+
+Where $A_1 = aG_1$, $B_2 = bG_2$, $C_1 = cG_1$, and $D_2 = dG_2$.
+
+Instead of solving for $a$, $b$, $c$, and $d$, the precompile checks if the product of the pairings equals $1$ (the multiplicative identity in $G_T$), which indirectly verifies that $ab + cd = 0$.
+
+That is, the precompile computes:
+
+$$
+e(A_1, B_2) \cdot e(C_1, D_2) \stackrel{?}{=} 1
+$$
+
+Which, expressed additively (in exponents):
+
+$$
+e(G_1, G_2)^{ab} \cdot e(G_1, G_2)^{cd} = e(G_1, G_2)^{ab+cd} = 1
+$$
+
+The precompile isn’t actually computing the discrete logarithm, it’s simply checking if the sum of pairings is zero.
+
+And the sum of pairings is zero if and only if the sum of the products of the discrete logarithms is zero. I.e. this hold if and only if $ab + cd = 0$.
+
+## End to End Example of Bilinear Pairings with Python and Solidity
+In many verification circuits like Groth16, PLONK, we actually want to check an equality such as:
+
+$$
+ab = cd
+$$
+
+This will be encoded by negating one of the $G_1$ points before it goes into the pairing precompile:
+
+$$
+(-A_1, B_2, C_1, D_2) = (-aG_1, bG_2, cG_1, dG_2)
+$$
+
+As shown earlier, negating a point flips the sign of its scalar. The precompile now checks:
+
+$$
+e(-A_1, B_2) \cdot e(C_1, D_2) = e(G_1, G_2)^{-ab+cd} \stackrel{?}{=} 1_{G_T}
+$$
+
+Which is true if and only if:
+
+$$
+-ab + cd \equiv 0 \quad(\text{mod} \ r) \quad \leftrightarrow \quad ab \equiv cd \quad(\text{mod} \ r)
+$$
+
+```python
+a = 4
+b = 3
+c = 6
+d = 2
+
+-ab + cd = 0
+```
+
+Putting it into formula, we can get:
+
+$$
+A_1B_2 + C_1D_1 = e(-aG_1,bG_2) + e(cG_1,dG_2) = 0
+$$
+
+In Python, this will equate to:
+```python
+from py_ecc.bn128 import neg, multiply, G1, G2
+a = 4
+b = 3
+c = 6
+d = 2
+
+# negate G1 * a to make the equation sum up to 0
+print(neg(multiply(G1, a)))
+#(3010198690406615200373504922352659861758983907867017329644089018310584441462, 17861058253836152797273815394432013122766662423622084931972383889279925210507)
+
+print(multiply(G2, b))
+# ((2725019753478801796453339367788033689375851816420509565303521482350756874229, 7273165102799931111715871471550377909735733521218303035754523677688038059653), (2512659008974376214222774206987427162027254181373325676825515531566330959255, 957874124722006818841961785324909313781880061366718538693995380805373202866))
+
+print(multiply(G1, c))
+# (4503322228978077916651710446042370109107355802721800704639343137502100212473, 6132642251294427119375180147349983541569387941788025780665104001559216576968)
+
+print(multiply(G2, d))
+# ((18029695676650738226693292988307914797657423701064905010927197838374790804409, 14583779054894525174450323658765874724019480979794335525732096752006891875705), (2140229616977736810657479771656733941598412651537078903776637920509952744750, 11474861747383700316476719153975578001603231366361248090558603872215261634898))
+```
+
+The output in structured format:
+```solidity
+aG1_x = 3010198690406615200373504922352659861758983907867017329644089018310584441462,
+aG1_y = 17861058253836152797273815394432013122766662423622084931972383889279925210507,
+
+bG2_x1 = 2725019753478801796453339367788033689375851816420509565303521482350756874229,
+bG2_x2 = 7273165102799931111715871471550377909735733521218303035754523677688038059653,
+bG2_y1 = 2512659008974376214222774206987427162027254181373325676825515531566330959255,
+bG2_y2 = 957874124722006818841961785324909313781880061366718538693995380805373202866,
+
+cG1_x = 4503322228978077916651710446042370109107355802721800704639343137502100212473,
+cG1_y = 6132642251294427119375180147349983541569387941788025780665104001559216576968,
+
+dG2_x1 = 18029695676650738226693292988307914797657423701064905010927197838374790804409,
+dG2_x2 = 14583779054894525174450323658765874724019480979794335525732096752006891875705,
+dG2_y1 = 2140229616977736810657479771656733941598412651537078903776637920509952744750,
+dG2_y2 = 11474861747383700316476719153975578001603231366361248090558603872215261634898
+```
