@@ -819,7 +819,7 @@ This passes and prints out `true` to the console.
 
 Notice that the points: `aG1_x`, `aG1_y`, `bG2_x2`, `bG2_x1`, `bG2_y2`, `bG2_y1`, and etc, have been labeled by their variable name (`a`, `b`, `c`, `d`), which group they belong (`G1`, `G2`), and if they represent an `x` or a `y` of the elliptic curve point (for `G1`: `_x`, `_y`, and for `G2`: `_x1`, `_x2`, `_y1`, `_y2`).
 
-Also note that the exPairing precompile does not expect or require an array, and that using in-line assembly as above is optional. One can also do the same as such:
+Also note that the ecPairing precompile does not expect or require an array, and that using in-line assembly as above is optional. One can also do the same as such:
 ```solidity
 //In Pairings.sol
 //Change parameter to `bytes calldata`
@@ -872,6 +872,6 @@ function testPairings() public view {
 
 This will pass and return true just like the initial implementation because it sends the exact same calldata to the precompile.
 
-The only difference is that in the first implementation, the test file sends an array of points to the pairing contract which uses inline-assembly to slice off the first 32 bytes (array length) and sends the rest to the precompile. (It is not actually slicing per se, it is because `input` already points at the first 32-byte word of the fixed-length array in memory: `uint256[12]`)
+The only difference is that in the first implementation, the test file sends an array of points to the pairing contract which uses inline-assembly to slice off the first 32 bytes (array length) and sends the rest to the precompile. (It is not actually slicing per se, it is because `input` already points at the first 32-byte word of the fixed-length array in memory: `uint256[12]`).
 
 And in the second implementation, the test file sends the abi encoded points to the pairing contract which forwards it as it is to the precompile.
