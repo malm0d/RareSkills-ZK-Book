@@ -386,7 +386,7 @@ assert eq(pairing(P_2, P_1) * pairing(Q_2, Q_1), pairing(R_2, R_1))
 ```
 
 ### What is happening to the code?
-The code above attempt to verify the following:
+The code above attempts to verify the following:
 
 $$
 e(2G_1, 3G_2) \ \cdot \ e(4G_1, 5G_2) \ \stackrel{?}{=} \ e(10G_1, 12G_2)
@@ -490,3 +490,94 @@ B₂ = b₂G2
 Aₙ = aₙG1
 Bₙ = bₙG2
 ```
+
+The precompile returns `1` if the following is true:
+```
+a₁b₁ + a₂b₂ + ... + aₙbₙ = 0
+```
+
+and `0` if otherwise.
+
+This seems to imply that the precompile is taking the discrete log of each of the points, which is considered infeasible in general. Furthermore, it does not behave like the pairing examples we have seen. Earlier examples return an element in $G_T$, but this precompile returns a `bool`.
+
+### Justification for EIP 197 Design Decision
+The first problem is that elements in $G_T$ are very large; specifically each element is a 12-dimentional object. This alone would take up a lot of space in memeory which leads to larger gas costs.
+
+Also, because of how ZK verification algorithms work (out of scope here), we generally do not check the value of the output of a bilinear pairing, but only that the output of the bilinear pairing is equal to other bilinear pairings. Using a simple example:
+
+$$
+e(A, B) \ \stackrel{?}{=} \ e(C, D) \ \cdot \ e(E,F)
+$$
+
+Specifically, the final step in [Groth16](https://www.rareskills.io/post/groth16) (the ZK algorithm used by tornado cash) looks like the following:
+
+$$
+e(A₁, B₂) = e(α₁, β₂) + e(L₁, γ₂) + e(C₁, δ₂) \quad\text{where}\quad
+\begin{cases}
+A₁, α₁, L₁, C₁ \in G_1 \\
+B₂, β₂, γ₂, D₂ \in G_2
+\end{cases}
+$$
+
+The meanings of the above variables is not critical at this point, but for your info:
+
+- $A_1$ : Proof element in $G_1$
+- $B_2$ : Proof element in $G_2$
+- α₁, β₂, γ₂, δ₂ : Public parameters (trusted setup)
+- $L_1$, $C_1$ : Terms derived from the proof and public inputs
+
+The fact that the above can be written as the sum of "products" (elliptic curve bilinear pairing) is what matters. Specifically, we can write (rearrange) it as:
+
+$$
+0 = e(-A_1, B_2) + e(α₁, β₂) + e(L₁, γ₂) + e(C₁, δ₂)
+$$
+
+And this matches the precompile specification perfectly.
+
+<hr>
+
+### Arriving at the equation (FYI)
+In the equation:
+
+$$
+e(A₁, B₂) = e(α₁, β₂) + e(L₁, γ₂) + e(C₁, δ₂)
+$$
+
+The above is written additively in $G_T$, which uses $0$ as the identity (additive identiy). But if we write it multiplicatively in $G_T$, which uses $1$ as the identity (multiplicative identity), we have:
+
+$$
+e(A₁, B₂) = e(α₁, β₂) \cdot e(L₁, γ₂) \cdot e(C₁, δ₂)
+$$
+
+Using the additive notation for $G_T$, we move $e(A_1, B_1)$ to the RHS by subtracting it on both sides:
+
+$$
+0 = -e(A_1, B_2) + e(α₁, β₂) + e(L₁, γ₂) + e(C₁, δ₂)
+$$
+
+Because the pairing is bilinear and alternating in the first slot:
+
+$$
+-e(A_1, B_2) = e(-A_1, B_2)
+$$
+
+Note that either inputs can be negated, and we will still get the multiplicative inverse of the bilinear pairing, but it is simpler to negate a $G_1$ point than a $G_2$ point. Additionally, a minus sign in the domain becomes “take the multiplicative inverse” in the target (i.e. negation in $G_1$ translates to inversion in $G_T$). So technically:
+
+$$
+-e(A_1, B_2) = e(-A_1, B_2) = e(A_1, B_2)^{-1}
+$$
+
+This gives the equation:
+
+$$
+0 = e(-A_1, B_2) + e(α₁, β₂) + e(L₁, γ₂) + e(C₁, δ₂)
+$$
+
+Which, when we convert back to the multiplicative notation used in EIP-197, we get:
+
+$$
+1 = e(A_1, B_2)^{-1} \cdot e(α₁, β₂) \cdot e(L₁, γ₂) \cdot e(C₁, δ₂)
+$$
+
+<hr>
+
