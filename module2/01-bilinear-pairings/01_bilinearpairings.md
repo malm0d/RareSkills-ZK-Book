@@ -310,7 +310,7 @@ Where: $g_1$ is a fixed generator of $G_1$, and $g_2$ is a fixed generator of $G
 The LHS is equivalent to:
 
 $$
-e(P,Q) = e(pg_1, qg_1) = e(g1, g2)^{pq}
+e(P,Q) = e(pg_1, qg_2) = e(g1, g2)^{pq}
 $$
 
 And the RHS is equivalent to:
