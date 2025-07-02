@@ -316,7 +316,7 @@ $$
 And the RHS is equivalent to:
 
 $$
-e(R,g_2) = e(rg_1, g_2) = e(g1, g2)^{rq}
+e(R,g_2) = e(rg_1, g_2) = e(g1, g2)^{r}
 $$
 
 Because $e(g_1, g_2)$ is a generator of $G_T$, the two values are equal if:
