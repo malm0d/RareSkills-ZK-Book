@@ -543,7 +543,7 @@ $$
 e(A₁, B₂) = e(α₁, β₂) + e(L₁, γ₂) + e(C₁, δ₂)
 $$
 
-The above is written additively in $G_T$, which uses $0$ as the identity (additive identiy). But if we write it multiplicatively in $G_T$, which uses $1$ as the identity (multiplicative identity), we have:
+The above is written additively in $G_T$, which uses $0$ as the identity (additive identity). But if we write it multiplicatively in $G_T$, which uses $1$ as the identity (multiplicative identity), we have:
 
 $$
 e(A₁, B₂) = e(α₁, β₂) \cdot e(L₁, γ₂) \cdot e(C₁, δ₂)
