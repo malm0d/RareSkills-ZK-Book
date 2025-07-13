@@ -32,7 +32,7 @@ P(x) =
 
 The $\prod$ symbol (pi-notation for product symbol) denotes the repeated multiplication over a specified range, i.e $\prod_{k = 1}^n a_k$ means: $a_1 \times a_2 \times ... \times a_n$.
 
-The inner product ($\prod$) has the Knonecker delta property, which in very simple words is described as "yields 1 when the indices match, 0 otherwise".
+The inner product ($\prod$) has the Kronecker delta property, which in very simple words is described as "yields 1 when the indices match, 0 otherwise".
 
 The inner product builds the basis polynomial for a fixed $j$; and $\frac{x - x_k}{x_j - x_k}$ equals to $1$ when $x = x_j$, and equals to $0$ when $x = x_k$ for any $k \neq j$.
 
