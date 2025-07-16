@@ -100,6 +100,8 @@ Given two DISTINCT polynomials $P(x)$ and $Q(x)$ of degrees $d_P$ and $d_Q$ resp
 
 In other words if $P(x) \neq Q(x)$, they can agree on at most $\max(d_P, d_Q)$ points.
 
+Or another way to put it, the Schwartz-Zippel Lemma effectively says that: if two distinct polynomials $P(x)$ and $Q(x)$ evaluate to the same value at a randomly chosen point $u$, then they are almost certainly identical (with an error probability of $\frac{d}{|\mathbb{F}{p}|}$, where $d \le \max(d_P,d_Q)$).
+
 ## Using the Schwartz-Zippel Lemma to Test if Two Vectors are Equal
 We can combine Lagrange Interpolation with the Schwartz-Zippel Lemma to test if two vectors are equal.
 
