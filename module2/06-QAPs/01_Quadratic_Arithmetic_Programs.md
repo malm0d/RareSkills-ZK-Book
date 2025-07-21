@@ -621,7 +621,7 @@ a_1w_1(x) + a_2w_2(x) + a_3w_3(x) + a_4w_4(x) \\[4pt]
 \end{align*}
 ```
 
-Something to note is that each final result is a single polynomial with degree $\le n-1$. This is because each column vector in each matrix has $n$ rows which translates to $n$ points being interpolated by Lagrange interpolation. Thus, we can also say that all polynomials interpolated from matrices $\mathbf{L}$, $\mathbf{R}$, and $\mathbf{O}$ will have degree $\le n-1$.
+Something to note is that each final result is a single polynomial with degree $\le n-1$. This is because each column vector in each matrix has $n$ rows which translates to $n$ points being interpolated by Lagrange interpolation. Thus, we can also say that all polynomials interpolated from matrices $\mathbf{L}$, $\mathbf{R}$, and $\mathbf{O}$ will be Lagrange interpolating polynomials, and they will each have degree $\le n-1$.
 
 In a way of summarizing the above, each matrix-witness dot-product in the R1CS: $\mathbf{La} \circ \mathbf{Ra} = \mathbf{Oa}$ can thus be transformed as:
 
@@ -636,8 +636,10 @@ And since each sum term evaluates to a polynomial, we can then represent them as
 ```math
 \mathbf{La} \rightarrow \sum_{i = 1}^{4}a_iu_i(x) = u(x) \\[4pt]
 \mathbf{Ra} \rightarrow \sum_{i = 1}^{4}a_iv_i(x) = v(x)\\[4pt]
-\mathbf{Oa} \rightarrow \sum_{i = 1}^{4}a_iw_1(x) = w(x)
+\mathbf{Oa} \rightarrow \sum_{i = 1}^{4}a_iw_i(x) = w(x)
 ```
+
+The polynomials $u(x)$, $v(x)$, and $w(x)$ will all have degree $\le n-1$.
 
 ## The Necessity to Interpolate All Columns
 Because of the homomorphisms:
@@ -675,3 +677,44 @@ More specifically,
     - The verifier cannot later compute $\mathcal{L}(\mathbf{La})$ because $\mathbf{a}$ is always private.
 
 ## Polynomial Degree Imbalance
+At this point, we CANNOT express the final result of: $\mathbf{La} \circ \mathbf{Ra} = \mathbf{Oa}$, as:
+
+```math
+u(x)v(x) = w(x)
+```
+
+because the polynomial degrees on both sides of the equality are not equal (do not match).
+
+Multiplying two polynomials together results in a product polynomial of which its degree is the sum of the degrees of the two polynomials being multiplied together.
+
+Polynomials $u(x)$, $v(x)$, and $w(x)$ are each of degree $n-1$. Thus when we multiply $u(x)$ and $v(x)$, the product polynomial $u(x)v(x)$ will have degree: $(n-1) + (n-1) = 2n - 2$.
+
+Since $w(x)$ (the target polynomial) has degree $n - 1$, then:
+
+```math
+u(x)v(x) \neq w(x)
+```
+
+as polynomials are not equal even though the underlying vector interpolated by $u(x)v(x)$ is equal to the underlying vector interpolated by $w(x)$.
+
+That is, the vector that polynomial $u(x)v(x)$ interpolates at $x = 1, 2, ...,n$:
+
+```math
+[(1, u(1)v(1)), \ (2, u(2)v(2)), \ ..., \ (n, u(n)v(n))]
+```
+
+is identical to the vector that polynomial $w(x)$ interpolates at $x = 1, 2, ...,n$:
+
+```math
+[(1, w(1)), \ (2, w(2)), \ ..., \ (n, w(n))]
+```
+
+because the original vectors obeyed: $u_iv_i = w_i$.
+
+Although the underlying vectors on both sides of the equality are equal, the polynomials that interpolate them are not equal.
+
+Another way to put it, the polynomials $u(x)v(x)$ and $w(x)$ may evaulate to the same values at specific points $x = [1, 2, ...n]$, but they are not the same polynomial because their degrees differ ($u(x)v(x)$ and $w(x)$ are distinct polynomials).
+
+**This is because the homorphisms we established earlier only make claims about vector addition, not Hadamard product.**
+
+Meaning, we cannot naively assert that $u(x)v(x) = w(x)$ as polynomials, even though their evaluations (underlying vectors they interpolate) match. This mismatch occurs because
