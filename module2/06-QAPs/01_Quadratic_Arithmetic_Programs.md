@@ -201,6 +201,7 @@ The most important takeaway from this chapter is this:
     
     - $\mathcal{L}(\mathbf{v_1} + \mathbf{v_2}) = \mathcal{L}(\mathbf{v_1}) + \mathcal{L}(\mathbf{v_2}) \quad$ is addition-preserving
     - $\mathcal{L}(\lambda\mathbf{v}) = \lambda\mathcal{L}(\mathbf{v}) \quad$ is scalar-multiplication preserving
+    - (i.e. the homomorphism preserves linear operations (addition/scalar multiplication))
 
 This is critical because equality testing with vectors takes $\mathcal{O}(n)$ time, but equality testing with **polynomials** takes $\mathcal{O}(1)$ time.
 
@@ -377,7 +378,6 @@ We convert (interpolate) each of the vectors derived from matrices $\mathbf{A}$ 
 ```
 
 That is, we will compute the following Lagrange interpolating polynomials:
-
 - For $\begin{bmatrix} 6 \\ 4 \end{bmatrix}$, define $p_1(x)$, such that $p_1(1) = 6$ and $p_1(2) = 4$.
 
 - For $\begin{bmatrix} 3 \\ 7 \end{bmatrix}$, define $p_2(x)$, such that $p_2(1) = 3$ and $p_2(2) = 7$.
@@ -642,8 +642,7 @@ And since each sum term evaluates to a polynomial, we can then represent them as
 The polynomials $u(x)$, $v(x)$, and $w(x)$ will all have degree $\le n-1$.
 
 ## The Necessity to Interpolate All Columns
-Because of the homomorphisms:
-
+Because of the homomorphism:
 - $\mathcal{L}(\mathbf{v_1} + \mathbf{v_2}) = \mathcal{L}(\mathbf{v_1}) + \mathcal{L}(\mathbf{v_2}) \quad$ (addition-preserving)
 
 - $\mathcal{L}(\lambda\mathbf{v}) = \lambda\mathcal{L}(\mathbf{v}) \quad$ (scalar-multiplication preserving)
@@ -695,7 +694,7 @@ Since $w(x)$ (the target polynomial) has degree $n - 1$, then:
 u(x)v(x) \neq w(x)
 ```
 
-as polynomials are not equal even though the underlying vector interpolated by $u(x)v(x)$ is equal to the underlying vector interpolated by $w(x)$.
+As polynomials, $u(x)v(x)$ and $w(x)$ are not equal even though the underlying vector interpolated by $u(x)v(x)$ is equal to the underlying vector interpolated by $w(x)$.
 
 That is, the vector that polynomial $u(x)v(x)$ interpolates at $x = 1, 2, ...,n$:
 
@@ -713,8 +712,73 @@ because the original vectors obeyed: $u_iv_i = w_i$.
 
 Although the underlying vectors on both sides of the equality are equal, the polynomials that interpolate them are not equal.
 
-Another way to put it, the polynomials $u(x)v(x)$ and $w(x)$ may evaulate to the same values at specific points $x = [1, 2, ...n]$, but they are not the same polynomial because their degrees differ ($u(x)v(x)$ and $w(x)$ are distinct polynomials).
+Another way to put it, the polynomials $u(x)v(x)$ and $w(x)$ may evaulate to the same values at specific points $x = [1, 2, ...n]$, but they are not the same polynomial because their degrees differ (which is to say $u(x)v(x)$ and $w(x)$ are distinct polynomials).
 
-**This is because the homorphisms we established earlier only make claims about vector addition, not Hadamard product.**
+**This is because the homorphisms we established earlier only make claims about vector addition (and vector scalar multiplcation), not Hadamard product.**
 
-Meaning, we cannot naively assert that $u(x)v(x) = w(x)$ as polynomials, even though their evaluations (underlying vectors they interpolate) match. This mismatch occurs because
+Meaning, we cannot naively assert that $u(x)v(x) = w(x)$ as polynomials, even though their evaluations (underlying vectors they interpolate) match. This mismatch occurs because:
+- The homomorphism $\mathcal{L}$ preserves linear operations (addition/scalar multiplication), but not multiplicative operations like the Hadamard product.
+- The Hadamard product of vectors $\mathbf{u} \circ \mathbf{v}$ translates to pointwise multiplication in evaluations, but this does not carry over to polynomial multiplication from interpolation.
+
+### Example of the Underlying Equality/Inequality
+Let $u(x)$ be the Lagrange interpolating polynomial that interpolates the vector $[2, 4, 8]$:
+
+```math
+u(x) = x^2 - x + 2 \\[8pt]
+u(1) = 2, \ u(2) = 4, \ u(3) = 8
+```
+
+And let $v(x)$ be the Lagrange interpolating polynomial that interpolates the vector $[4, 2, 8]$:
+
+```math
+v(x) = 4x^2 - 14x + 14 \\[8pt]
+v(1) = 4, \ v(2) = 2, \ v(3) = 8
+```
+
+Note that the above polynomials are not represented in their finite field equivalent. Calculating them in $\mod 17$ would yield $u(x) = x^2 + 16x + 2$ and $v(x) = 4x^2 + 3x + 14$.
+
+If we take the Hadamard product of vectors $[2, 4, 8] \circ [4, 2, 8]$, the result will be: $[8, 8, 64]$. And if we multiply polynomials $u(x)$ and $v(x)$ together, we get the product polynomial $w(x) = 4x^4 - 18x^3 + 36x^2 - 42x + 28$. The Lagrange interpolating polynomial that interpolates the Hadamard product vector $[8, 8, 64]$ is: $h(x) = 28x^2 - 84x + 64$ (or $11x^2 + x + 13$ in $\mod 17$).
+
+The following is a plot of polynomials $h(x)$ (red) and $w(x)$ (blue):
+![qap-point-cross](/module2/06-QAPs/qap-3-point-cross.png)
+
+Notice that both the product polynomial $w(x)$ and the Lagrange interpolating polynomial of the Hadamard product vector $h(x)$ do not look the same and yet they interpolate the exact same points. The key here is that the product polynomial $w(x)$ interpolates the Hadamard product $[8, 8, 64]$ of the two vectors from $u(x)$ and $v(x)$. Despite interpolating the exact same points, i.e. having the same underlying vectors, the two polynomials are clearly different and not equal.
+
+The important thing at this point is to figure out how to "make" $w(x)$ equal to $u(x)v(x)$ as polynomials since they both interpolate the same vector over the common set of $x$ values $[1, 2, ..., n]$.
+
+## Interpolating the Zero Vector $\mathbf{0} = [0, 0, ..., 0]$
+**If $\mathbf{v_1} \circ \mathbf{v_2} = \mathbf{v_3}$, then $\mathbf{v_1} \circ \mathbf{v_2} = \mathbf{v_3} + \mathbf{0}$ (where $\mathbf{0}$ is the zero vector $[0, 0, ..., 0]$).**
+
+When we interpolate $\mathbf{0}$ (i.e. interpolate the points $[(1, 0), (2, 0), ..., (n, 0)]$), the minimal-degree polynomial that interpolates these points is the zero polynomial $f(x) = 0$.
+
+Instead of interpolating $\mathbf{0}$ with Lagrange interpolation and getting $f(x) = 0$ (remember that Lagrange interpolation finds the polynomial of the lowest degree $\le n-1$ that interpolates all points in a set of $n$ points), we can utilize a **higher-degree polynomial** that also interpolates $\mathbf{0}$ to balance out the mismatch in polynomial degrees.
+
+**That is, we find a polynomial $b(x)$ that interpolates the points $[(1, 0), (2, 0), ..., (n, 0)]$.**
+
+Another way to put it, find a polynomial $b(x)$ that evaluates to zero over the common set of $x$ values: $[1, 2, ..., n]$. Such as:
+
+```math
+b(x) = (x - 1)(x - 2)...(x - n)
+```
+
+For example, the black polynomial ($b(x) = 4x^4 - 18x^3 + 8x^2 + 42x + 28$) in the image below interpolates the points: $[(1, 0), (2, 0), (3, 0)]$.
+
+![zero-poly](/module2/06-QAPs/qap-zero-polynomial.png)
+
+It can be said that $b(x) = 4x^4 - 18x^3 + 8x^2 + 42x + 28$ is a valid interpolation of the zero vector $[0, 0, 0]$.
+
+(On a side note, be aware that $\mathbf{0}$ can cary in its representations depending on the context. Higher-degree polynomials can be valid interpolations of $\mathbf{0}$ but they are not minimal. The space of possible interpolants for $\mathbf{0}$ (i.e. all polynomials that evaluate to zero over the common set of $x$ values) is infinite-dimensional - since we can construct infinitely many higher-degree polynomials that fit.)
+
+Thus, we can rewrite our original equation: $u(x)v(x) = w(x)$ to the following balanced equation:
+
+```math
+u(x)v(x) = w(x) + b(x)
+```
+
+Note that in the image above, $b(x)$ was computed based on the balanced equation as:
+
+```math
+b(x) = u(x)v(x) - w(x)
+```
+
+However, we can't let the prover choose any random $b(x)$, otherwise a malicious prover could choose a $b(x)$ that balances $u(x)v(x)$ and $w(x)$, but ultimately does not interpolate the same underlying vector (e.g. $[8, 8, 64]$). In other words, a malicious prover could pick a $b(x)$ that balances the equation but both sides do not end up with the same underlying vector.
