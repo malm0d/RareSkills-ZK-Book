@@ -486,7 +486,6 @@ For matrix $\mathbf{R}$:
 ```math
 \begin{align*}
 \mathbf{R} &=
-%--- the 3×4 matrix ---
 \begin{bmatrix}
     r_{1, 1} & r_{1, 2} & r_{1, 3} & r_{1, 4} \\
     r_{2, 1} & r_{2, 2} & r_{2, 3} & r_{2, 4} \\
@@ -737,12 +736,14 @@ v(1) = 4, \ v(2) = 2, \ v(3) = 8
 
 Note that the above polynomials are not represented in their finite field equivalent. Calculating them in $\mod 17$ would yield $u(x) = x^2 + 16x + 2$ and $v(x) = 4x^2 + 3x + 14$.
 
-If we take the Hadamard product of vectors $[2, 4, 8] \circ [4, 2, 8]$, the result will be: $[8, 8, 64]$. And if we multiply polynomials $u(x)$ and $v(x)$ together, we get the product polynomial $w(x) = 4x^4 - 18x^3 + 36x^2 - 42x + 28$. The Lagrange interpolating polynomial that interpolates the Hadamard product vector $[8, 8, 64]$ is: $h(x) = 28x^2 - 84x + 64$ (or $11x^2 + x + 13$ in $\mod 17$).
+If we take the Hadamard product of vectors $[2, 4, 8] \circ [4, 2, 8]$, the result will be: $[8, 8, 64]$. And if we multiply polynomials $u(x)$ and $v(x)$ together, we get the product polynomial $w(x) = 4x^4 - 18x^3 + 36x^2 - 42x + 28$. 
 
-The following is a plot of polynomials $h(x)$ (red) and $w(x)$ (blue):
+The Lagrange interpolating polynomial that interpolates the Hadamard product vector $[8, 8, 64]$ is: $l(x) = 28x^2 - 84x + 64$ (or $11x^2 + x + 13$ in $\mod 17$).
+
+The following is a plot of polynomials $l(x)$ (red) and $w(x)$ (blue):
 ![qap-point-cross](/module2/06-QAPs/qap-3-point-cross.png)
 
-Notice that both the product polynomial $w(x)$ and the Lagrange interpolating polynomial of the Hadamard product vector $h(x)$ do not look the same and yet they interpolate the exact same points. The key here is that the product polynomial $w(x)$ interpolates the Hadamard product $[8, 8, 64]$ of the two vectors from $u(x)$ and $v(x)$. Despite interpolating the exact same points, i.e. having the same underlying vectors, the two polynomials are clearly different and not equal.
+Notice that both the product polynomial $w(x)$ and the Lagrange interpolating polynomial of the Hadamard product vector $l(x)$ do not look the same and yet they interpolate the exact same points. The key here is that the product polynomial $w(x)$ interpolates the Hadamard product $[8, 8, 64]$ of the two vectors from $u(x)$ and $v(x)$. Despite interpolating the exact same points at $x = [1, 2, 3]$, i.e. having the same underlying vectors, the two polynomials are clearly different and not equal.
 
 The important thing at this point is to figure out how to "make" $w(x)$ equal to $u(x)v(x)$ as polynomials since they both interpolate the same vector over the common set of $x$ values $[1, 2, ..., n]$.
 
@@ -767,7 +768,7 @@ For example, the black polynomial ($b(x) = 4x^4 - 18x^3 + 8x^2 + 42x + 28$) in t
 
 It can be said that $b(x) = 4x^4 - 18x^3 + 8x^2 + 42x + 28$ is a valid interpolation of the zero vector $[0, 0, 0]$.
 
-(On a side note, be aware that $\mathbf{0}$ can cary in its representations depending on the context. Higher-degree polynomials can be valid interpolations of $\mathbf{0}$ but they are not minimal. The space of possible interpolants for $\mathbf{0}$ (i.e. all polynomials that evaluate to zero over the common set of $x$ values) is infinite-dimensional - since we can construct infinitely many higher-degree polynomials that fit.)
+(On a side note, be aware that $\mathbf{0}$ can vary in its representations depending on the context. Higher-degree polynomials can be valid interpolations of $\mathbf{0}$ but they are not minimal. The space of possible interpolants for $\mathbf{0}$ (i.e. all polynomials that evaluate to zero over the common set of $x$ values) is infinite-dimensional - since we can construct infinitely many higher-degree polynomials that fit.)
 
 Thus, we can rewrite our original equation: $u(x)v(x) = w(x)$ to the following balanced equation:
 
@@ -781,4 +782,241 @@ Note that in the image above, $b(x)$ was computed based on the balanced equation
 b(x) = u(x)v(x) - w(x)
 ```
 
-However, we can't let the prover choose any random $b(x)$, otherwise a malicious prover could choose a $b(x)$ that balances $u(x)v(x)$ and $w(x)$, but ultimately does not interpolate the same underlying vector (e.g. $[8, 8, 64]$). In other words, a malicious prover could pick a $b(x)$ that balances the equation but both sides do not end up with the same underlying vector.
+However, we can't let the prover choose any random $b(x)$, otherwise a malicious prover could choose a $b(x)$ that balances $u(x)v(x)$ and $w(x)$, but ultimately does not interpolate the same underlying vector (e.g. $[8, 8, 64]$). In other words, a malicious prover could pick a $b(x)$ that balances the equation, but both sides of the equation do not end up with the same underlying vector.
+
+For example, a prover has three vectors: $\mathbf{v_1}$, $\mathbf{v_2}$, $\mathbf{v_3}$. They must prove that $\mathbf{v_1} \circ \mathbf{v_2}$ gives exactly $\mathbf{v_3}$. Using one of our previous examples, it means that if $\mathbf{v_1} \circ \mathbf{v_2} = [2, 4, 8] \circ [4, 2, 8]$, then $\mathbf{v_3}$ must be $[8, 8, 64]$. The equation $b(x) = u(x)v(x) - w(x)$ should only hold when that is true. However, a malicious prover could provide $\mathbf{v_3} = [8, 8, 8]$, and then pick a fake $b(x)$ such that $b(x) = u(x)v(x) - w(x)$ holds even though $\mathbf{v_1} \circ \mathbf{v_2} \neq \mathbf{v_3}$. This would falsely "prove" correctness.
+
+To restrict the prover's choice of $b(x)$, we can use the following theorem.
+
+### The Union of Roots of the Product Polynomial
+#### Theorem: 
+**If $h(x) = f(x)g(x)$, and $f(x)$ has a set of roots $\{r_f\}$, and $g(x)$ has a set of roots $\{r_g\}$, then $h(x)$ has the roots: $\{r_f\} \cup \{r_g\}$.**
+
+#### Example:
+If $f(x) = (x-3)(x-4)$, then $r_f = \{3, 4\}$. And if $g(x) = (x-5)(x-6)$, then $r_g = \{5, 6\}$.
+
+Then, $h(x) = f(x)g(x)$ has roots $r_h = \{3,4,5,6\}$.
+
+Hence we can use the theroem to enforce that $b(x)$ has roots at $x = 1, 2, ..., n$.
+
+## Forcing $b(x)$ to be the Zero Vector $\mathbf{0}$
+We can decompose $b(x)$ into the following:
+
+```math
+b(x) = h(x)t(x)
+```
+
+where $t(x)$ is the polynomial:
+
+```math
+t(x) = (x - 1)(x - 2)...(x-n)
+```
+
+Sometimes $t(x)$ is known as the "vanishing polynomial" or the "target polynomial", because it always evaluates to $0$ for every $x = 1, 2, ..., n$. The polynomial $t(x)$ can also be called a **zero vector polynomial** because it interpolates the zero vector $\mathbf{0} = [0, 0, ..., 0]$ since it evaluates to $0$ over the common set of $x$. 
+
+
+This means **any polynomial that multiplies with $t(x)$ will also be the zero vector**. And according to the union of roots of the product polynomial theorem, the resulting product polynomial must also have roots at $x = 1, 2, ..., n$.
+
+Therefore, we replace $b(x)$ with $h(x)t(x)$ in our balanced equation $u(x)v(x) = w(x) + b(x)$ to the folllowing:
+
+```math
+u(x)v(x) = w(x) + h(x)t(x)
+```
+
+And we can compute the polynomial $h(x)$ using basic algebra:
+
+```math
+h(x) = \frac{u(x)v(x) - w(x)}{t(x)}
+```
+
+Note that the specific polynomial for $t(x)$ is dependent on the structure of the R1CS, specifically on the number of rows $n$ of the matrices (which determines the interpolation points). Because if the matrices have $3$ rows, it means the R1CS has $3$ constraints; and when interpolating the column vectors of the matrices (e.g. $u_i(x)$, $v_i(x)$, $w_i(x)$), the common points $x = [1, 2, 3]$ will be used (one point per constraint).
+
+## QAP End-to-End
+This summarizes everything that has been discussed so far. Suppose we have an R1CS with matrices $\mathbf{L}$, $\mathbf{R}$, $\mathbf{O}$, and the witness $\mathbf{a}$.
+
+```math
+\mathbf{La} \circ \mathbf {Ra} = \mathbf{Oa}
+```
+
+We assume that the matrices have $n$ rows and $m$ columns, where $n = 3$ and $m = 4$.
+
+The matrices $\mathbf{L}$, $\mathbf{R}$, $\mathbf{O}$ are as follows:
+
+```math
+\begin{align*}
+\mathbf{L} &= 
+\begin{bmatrix}
+l_{1, 1} & l_{1, 2} & l_{1, 3} & l_{1, 4} \\
+l_{2, 1} & l_{2, 2} & l_{2, 3} & l_{2, 4} \\
+l_{3, 1} & l_{3, 2} & l_{3, 3} & l_{3, 4}
+\end{bmatrix}
+\\[16pt]
+\mathbf{R} &= 
+\begin{bmatrix}
+r_{1, 1} & r_{1, 2} & r_{1, 3} & r_{1, 4} \\
+r_{2, 1} & r_{2, 2} & r_{2, 3} & r_{2, 4} \\
+r_{3, 1} & r_{3, 2} & r_{3, 3} & r_{3, 4}
+\end{bmatrix}
+\\[16pt]
+\mathbf{O} &= 
+\begin{bmatrix}
+o_{1, 1} & o_{1, 2} & o_{1, 3} & o_{1, 4} \\
+o_{2, 1} & o_{2, 2} & o_{2, 3} & o_{2, 4} \\
+o_{3, 1} & o_{3, 2} & o_{3, 3} & o_{3, 4}
+\end{bmatrix}
+\end{align*}
+```
+
+And the witness $\mathbf{a}$ is:
+
+```math
+\mathbf{a} = 
+\begin{bmatrix}
+a_1 \\ a_2 \\ a_3 \\ a_4
+\end{bmatrix}
+```
+
+We split each matrix into $m$ column vectors and interpolate them over the common set of $x = [1, 2, ..., n]$ using Lagrange interpolation to produce $m$ Lagrange interpolating polynomials each.
+
+```math
+\begin{align*}
+\mathbf{L} &=
+\underbrace{ 
+\begin{bmatrix}
+l_{1, 1} \\ l_{2, 1} \\ l_{3, 1}
+\end{bmatrix}}_{u_{1}(x)}
+,
+\underbrace{ 
+\begin{bmatrix}
+l_{1, 2} \\ l_{2, 2} \\ l_{3, 2}
+\end{bmatrix}}_{u_{2}(x)}
+,
+\underbrace{
+\begin{bmatrix}
+l_{1, 3} \\ l_{2, 3} \\ l_{3, 3}
+\end{bmatrix}}_{u_{3}(x)}
+,
+\underbrace{
+\begin{bmatrix}
+l_{1, 4} \\ l_{2, 4} \\ l_{3, 4}
+\end{bmatrix}}_{u_{4}(x)}
+\\[36pt]
+
+\mathbf{R} &=
+\underbrace{ 
+\begin{bmatrix}
+r_{1, 1} \\ r_{2, 1} \\ r_{3, 1}
+\end{bmatrix}}_{v_{1}(x)}
+,
+\underbrace{ 
+\begin{bmatrix}
+r_{1, 2} \\ r_{2, 2} \\ r_{3, 2}
+\end{bmatrix}}_{v_{2}(x)}
+,
+\underbrace{
+\begin{bmatrix}
+r_{1, 3} \\ r_{2, 3} \\ r_{3, 3}
+\end{bmatrix}}_{v_{3}(x)}
+,
+\underbrace{
+\begin{bmatrix}
+r_{1, 4} \\ r_{2, 4} \\ r_{3, 4}
+\end{bmatrix}}_{v_{4}(x)}
+\\[36pt]
+
+\mathbf{O} &=
+\underbrace{ 
+\begin{bmatrix}
+o_{1, 1} \\ o_{2, 1} \\ o_{3, 1}
+\end{bmatrix}}_{w_{1}(x)}
+,
+\underbrace{ 
+\begin{bmatrix}
+o_{1, 2} \\ o_{2, 2} \\ o_{3, 2}
+\end{bmatrix}}_{w_{2}(x)}
+,
+\underbrace{
+\begin{bmatrix}
+o_{1, 3} \\ o_{2, 3} \\ o_{3, 3}
+\end{bmatrix}}_{w_{3}(x)}
+,
+\underbrace{
+\begin{bmatrix}
+o_{1, 4} \\ o_{2, 4} \\ o_{3, 4}
+\end{bmatrix}}_{w_{4}(x)}
+\end{align*}
+```
+
+The group of vectors in a finite field under addition is homomorphic to the group of polynomials in a finite field under addtion. This also means multiplying a vector (column vector) in a finite field by a scalar is homomorphic to multiplying a polynomial in a finite field by a scalar. Lagrange interpolation ($\mathcal{L}$) functions as a linear homomorphism for vectors and polynomials. This means:
+- $\mathcal{L}(\mathbf{v_1} + \mathbf{v_2}) = \mathcal{L}(\mathbf{v_1}) + \mathcal{L}(\mathbf{v_2}) \quad$ is addition-preserving
+- $\mathcal{L}(\lambda\mathbf{v}) = \lambda\mathcal{L}(\mathbf{v}) \quad$ is scalar-multiplication preserving
+
+Then for the matrix-witness dot-products $\mathbf{La}$, $\mathbf{Ra}$, and $\mathbf{Oa}$, each are homomorphically equivalent to the following polynomials:
+
+```math
+\begin{align*}
+\mathbf{La} &\rightarrow \sum_{i = 1}^{4}a_iu_i(x) = a_1u_1(x) + a_2u_2(x) + a_3u_3(x) + a_4u_4(x) = u(x)
+\\
+\mathbf{Ra} &\rightarrow \sum_{i = 1}^{4}a_iv_i(x) = a_1v_1(x) + a_2v_2(x) + a_3v_3(x) + a_4v_4(x) = v(x)
+\\
+\mathbf{Oa} &\rightarrow \sum_{i = 1}^{4}a_iw_i(x) = a_1w_1(x) + a_2w_2(x) + a_3w_3(x) + a_4w_4(x) = w(x)
+\end{align*}
+```
+
+Since matrices $\mathbf{L}$, $\mathbf{R}$, $\mathbf{O}$ had $3$ rows, and each column vector from these matrices were interpolated as a $3$ dimensional vector ($3$ element vector), the common set of $x$ that was used for Lagrange interpolation was specifically: $x = [1, 2, 3]$. In this case, our zero vector polynomial $t(x)$ will be:
+
+```math
+t(x) = (x - 1)(x - 2)(x - 3)
+```
+
+And $h(x)$ will be:
+
+```math
+h(x) = \frac{u(x)v(x) - w(x)}{t(x)}
+```
+
+The final balanced equation will be:
+
+```math
+u(x)v(x) = w(x) + h(x)t(x)
+```
+
+And the final formula for a QAP representation of the original R1CS in this example is:
+
+```math
+\sum_{i = 1}^{4}a_iu_i(x) \cdot \sum_{i = 1}^{4}a_iv_i(x) = \sum_{i = 1}^{4}a_iw_i(x) + h(x)t(x)
+```
+
+## Final Formula for QAP
+A QAP is thus the following formula:
+
+```math
+\sum_{i = 1}^{m}a_iu_i(x) \sum_{i = 1}^{m}a_iv_i(x) = \sum_{i = 1}^{m}a_iw_i(x) + h(x)t(x)
+```
+
+Where $u_i(x)$, $v_i(x)$, and $w_i(x)$ are the Lagrange interpolating polynomials that interpolate the columns (column vectors) of matrices $\mathbf{L}$, $\mathbf{R}$, and $\mathbf{O}$ respectively. The polynomial $t(x) = (x - 1)(x - 2)...(x - n)$, where $n$ is the number of rows in the matrices. And $h(x) is the polynomial:
+
+```math
+h(x) = \frac{\sum_{i = 1}^{m}a_iu_i(x) \sum_{i = 1}^{m}a_iv_i(x) \ - \ \sum_{i = 1}^{m}a_iw_i(x)}{t(x)}
+```
+
+## Succinct Zero Knowledge Proofs with QAPs
+Suppose we had a way for the verifier to send a random value $\tau$ to the prover, and the prover responds with:
+
+```math
+\begin{align*}
+A &= u(\tau) \\
+B &= v(\tau) \\
+C &= w(\tau) + h(\tau)t(\tau)
+\end{align*}
+```
+
+The verifier could check that $AB = C$ and accept that the prover has a valid withness $\mathbf{a}$ that satisfies both the R1CS and the QAP.
+
+However, this would require the verifier to naively trust that the prover is evaluating the polynomials correctly; and we do not have a mechanism to force the prover to do so.
+
+That is, nothing stops a malicious prover from making up fake values for $A$, $B$, and $C$ that satisfies $AB = C$. The malicious prover may not even use the real polynomials $u(x)$, $v(x)$, $w(x)$, $h(x)$ and $t(x)$, since the values $A$, $B$, and $C$ aren't even derived from them.
+
+In the next chapter, we will show Python code to [convert an R1CS to a QAP](https://www.rareskills.io/post/r1cs-to-qap) based on this chapter.
+
+Then we will discuss trusted setups to begin tackling the problem of how to get the oriver to evaluate the polynomials honestly.
