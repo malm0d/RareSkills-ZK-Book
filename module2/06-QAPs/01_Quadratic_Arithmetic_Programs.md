@@ -625,16 +625,28 @@ Something to note is that each final result is a single polynomial with degree $
 In a way of summarizing the above, each matrix-witness dot-product in the R1CS: $\mathbf{La} \circ \mathbf{Ra} = \mathbf{Oa}$ can thus be transformed as:
 
 ```math
-\mathbf{La} \rightarrow \sum_{i = 1}^{4}a_iu_i(x) \\[4pt]
-\mathbf{Ra} \rightarrow \sum_{i = 1}^{4}a_iv_i(x) \\[4pt]
+\mathbf{La} \rightarrow \sum_{i = 1}^{4}a_iu_i(x)
+```
+
+```math
+\mathbf{Ra} \rightarrow \sum_{i = 1}^{4}a_iv_i(x)
+```
+
+```math
 \mathbf{Oa} \rightarrow \sum_{i = 1}^{4}a_iw_1(x)
 ```
 
 And since each sum term evaluates to a polynomial, we can then represent them as:
 
 ```math
-\mathbf{La} \rightarrow \sum_{i = 1}^{4}a_iu_i(x) = u(x) \\[4pt]
-\mathbf{Ra} \rightarrow \sum_{i = 1}^{4}a_iv_i(x) = v(x)\\[4pt]
+\mathbf{La} \rightarrow \sum_{i = 1}^{4}a_iu_i(x) = u(x)
+```
+
+```math
+\mathbf{Ra} \rightarrow \sum_{i = 1}^{4}a_iv_i(x) = v(x) 
+```
+
+```math
 \mathbf{Oa} \rightarrow \sum_{i = 1}^{4}a_iw_i(x) = w(x)
 ```
 
@@ -879,8 +891,7 @@ a_1 \\ a_2 \\ a_3 \\ a_4
 We split each matrix into $m$ column vectors and interpolate them over the common set of $x = [1, 2, ..., n]$ using Lagrange interpolation to produce $m$ Lagrange interpolating polynomials each.
 
 ```math
-\begin{align*}
-\mathbf{L} &=
+\mathbf{L} =
 \underbrace{ 
 \begin{bmatrix}
 l_{1, 1} \\ l_{2, 1} \\ l_{3, 1}
@@ -900,9 +911,10 @@ l_{1, 3} \\ l_{2, 3} \\ l_{3, 3}
 \begin{bmatrix}
 l_{1, 4} \\ l_{2, 4} \\ l_{3, 4}
 \end{bmatrix}}_{u_{4}(x)}
-\\[36pt]
+```
 
-\mathbf{R} &=
+```math
+\mathbf{R} =
 \underbrace{ 
 \begin{bmatrix}
 r_{1, 1} \\ r_{2, 1} \\ r_{3, 1}
@@ -922,9 +934,10 @@ r_{1, 3} \\ r_{2, 3} \\ r_{3, 3}
 \begin{bmatrix}
 r_{1, 4} \\ r_{2, 4} \\ r_{3, 4}
 \end{bmatrix}}_{v_{4}(x)}
-\\[36pt]
+```
 
-\mathbf{O} &=
+```math
+\mathbf{O} =
 \underbrace{ 
 \begin{bmatrix}
 o_{1, 1} \\ o_{2, 1} \\ o_{3, 1}
@@ -944,7 +957,6 @@ o_{1, 3} \\ o_{2, 3} \\ o_{3, 3}
 \begin{bmatrix}
 o_{1, 4} \\ o_{2, 4} \\ o_{3, 4}
 \end{bmatrix}}_{w_{4}(x)}
-\end{align*}
 ```
 
 The group of vectors in a finite field under addition is homomorphic to the group of polynomials in a finite field under addtion. This also means multiplying a vector (column vector) in a finite field by a scalar is homomorphic to multiplying a polynomial in a finite field by a scalar. Lagrange interpolation ($\mathcal{L}$) functions as a linear homomorphism for vectors and polynomials. This means:
