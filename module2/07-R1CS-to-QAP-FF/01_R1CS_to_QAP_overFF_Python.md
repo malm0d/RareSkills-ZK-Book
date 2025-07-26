@@ -54,7 +54,7 @@ This ultimately makes the verification fail or becomes insecure due to field mis
 
 Not matching the two moduli is a very common mistake.
 
-But for this example, we will pick a small prime number to make this manageable. We will use the prime number $79$ as the field modulus.
+But for this example, we will pick a small prime number to make this manageable. We will use the prime number $79$ as the field modulus $\mathbb{F_{79}}$.
 
 Given the R1CS, we need to convert it to the form:
 
@@ -152,3 +152,57 @@ assert all(np.equal(
 ```
 
 ## Finite Field Arithmetic in Python
+The next step is to convert all items ($\mathbf{L}$, $\mathbf{R}$, $\mathbf{O}$, $\mathbf{a}$) into field arrays. Doing modular arithmetic in Numpy is tricky but we can use the `galois` library to help us do so.
+
+```python
+import galois
+
+p = 79
+GF = galois.GF(79)
+```
+
+We cannot have operations such as: `GF(-1)` otherwise it will throw an exception. Thus when any of our items have a negative value, we have to convert the negative number to its congruent representation in the finite field.
+
+To convert negative numbers to their congruent representation in the finite field, we can add the field modulus to them. And to avoid "overflowing" positive values, that is to ensure that our values stay within the valid range of the prime field $\mathbb{F_{p}}$ ($0$ to $p - 1$), we take the modulus with the field modulus.
+
+Note that we have established that the **field modulus and curve order are equal** at this point. So when we say "add the field modulus" and "take the modulus with the field modulus", its the same as saying "add the curve order" and "take the modulus with the curve order".
+
+```python
+L = (L + 79) % 79
+R = (R + 79) % 79
+O = (O + 79) % 79
+```
+
+The new values in matrices $\mathbf{L}$, $\mathbf{R}$, and $\mathbf{O}$ in $\mod 79$ are thus:
+
+```math
+\begin{align*}
+
+\mathbf{L} &=
+\begin{bmatrix}
+0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 74 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}
+\\
+
+\mathbf{R} &=
+\begin{bmatrix}
+0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 
+\end{bmatrix}
+\\
+
+\mathbf{O} &=
+\begin{bmatrix}
+0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+0 & 1 & 0 & 0 & 0 & 78 & 0 
+\end{bmatrix}
+
+\end{align*}
+```
