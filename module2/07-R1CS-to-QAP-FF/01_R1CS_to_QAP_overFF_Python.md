@@ -161,7 +161,7 @@ p = 79
 GF = galois.GF(79)
 ```
 
-We cannot have operations such as: `GF(-1)` otherwise it will throw an exception. Thus when any of our items have a negative value, we have to convert the negative number to its congruent representation in the finite field.
+We cannot have operations such as: `GF(-1)` otherwise it will throw an exception. Thus when any of our items have a negative value, we have to **convert the negative number to its congruent representation in the finite field**.
 
 To convert negative numbers to their congruent representation in the finite field, we can add the field modulus to them. And to avoid "overflowing" positive values, that is to ensure that our values stay within the valid range of the prime field $\mathbb{F_{p}}$ ($0$ to $p - 1$), we take the modulus with the field modulus.
 
@@ -206,3 +206,127 @@ The new values in matrices $\mathbf{L}$, $\mathbf{R}$, and $\mathbf{O}$ in $\mod
 
 \end{align*}
 ```
+
+We can now (safely) convert the matrices into field arrays, simply by wrapping them with `GF`. We will also need to do the same for the witness $\mathbf{a}$ since it contains negative values.
+
+```python
+L_galois = GF(L)
+R_galois = GF(R)
+O_galois = GF(O)
+
+x = GF(4)
+y = GF((-2 + 79) % 79)
+v1 = x * x
+v2 = v1 * v1
+v3 = GF((-5 + 79) % 79)*y * y
+z = v3 * v1 + v2    # z = -5(y^2)(x^2) + x^4
+
+witness = GF(np.array([1, z, x, y, v1, v2, v3]))
+
+assert all(np.equal(
+    np.matmul(L_galois, witness) * np.matmul(R_galois, witness),
+    np.matmul(O_galois, witness)
+)), "not equal"
+```
+
+## Polynomial Interpolation in Finite Fields
+Next, we need to turn each of the columns of matrices $\mathbf{L}$, $\mathbf{R}$, and $\mathbf{O}$ into a list of (galois) Lagrange interpolating polynomials (in the finite field) that interpolate the columns. The points we interpolate are $x = [1, 2, 3, 4]$, since we have 4 rows (4 constraints in the R1CS).
+
+Each matrix will yield 7 polynomials since there are 7 columns in the matrices.
+
+Note that the $x$ values also need to be converted to field elements.
+
+```python
+def interpolate_column(col):
+    xs = GF(np.array([1, 2, 3, 4]))
+    return galois.lagrange_poly(xs, col)
+
+# `np.apply_along_axis(func1d, axis, arr, ....)`
+# `axis` = 0 means apply the function down the columns
+# apply_along_axis is the same as doing a for loop over the columns and collecting the results in an array
+U_polynomials = np.apply_along_axis(interpolate_column, 0, L_galois)
+V_polynomials = np.apply_along_axis(interpolate_column, 0, R_galois)
+W_polynomials = np.apply_along_axis(interpolate_column, 0, O_galois)
+
+# U_polynomials = u1(x), u2(x), ... u7(x)
+# V_polynomials = v1(x), v2(x), ... v7(x)
+# W_polynomials = w1(x), w2(x), ... w7(x)
+```
+
+If we look at the contents of the matrices, we should expect the first 2 polynomials of `U_polynomials` and `V_polynomials` to be zero since those columns are zero vectors. Likewise, we should also expect the first polynomial of `W_polynomials` to be zero for the same reason.
+
+```python
+print(U_polynomials[:2])
+print(V_polynomials[:2])
+print(W_polynomials[:1])
+
+# [Poly(0, GF(79)), Poly(0, GF(79))]
+# [Poly(0, GF(79)), Poly(0, GF(79))]
+# [Poly(0, GF(79))]
+```
+
+The term `Poly(0, GF(79))` is simply a polynomial where all coefficients are zero (a.k.a the zero polynomial or the zero vector polynomial).
+
+The reader is encouraged to evaluate the polynomials in the R1CS at the $x$ values to see they interpolate the matrix values correctly
+
+## Computing $h(x)$
+Since the R1CS has 4 constraints, we know that:
+
+```math
+t(x) = (x - 1)(x - 2)(x - 3)(x - 4)
+```
+By way of reminder, the following is the formula for a QAP. The vector $\mathbf{a}$ is the witness:
+
+```math
+\underbrace{\sum_{i = 1}^{m}a_iu_i(x)}_{\text{term 1 }(\mathbf{La})} \underbrace{\sum_{i = 1}^{m}a_iv_i(x)}_{\text{term 2 }(\mathbf{Ra})} = \underbrace{\sum_{i = 1}^{m}a_iw_i(x)}_{\text{term 3 }(\mathbf{Oa})} + h(x)t(x)
+```
+
+Each of the terms is taking the inner product (dot product) of the witness with the column-interpolating polynomials. That is, each of the summation terms are effectively the inner product between 
+$[a_1, ..., a_m]$ and $[u_1(x), ..., u_m(x)]$.
+
+Which is essentially:
+
+```math
+a_1u_1(x) + a_2u_2(x) + ... + a_mu_m(x)
+```
+
+And each term evaluates into a polynomial itself. For example:
+
+```math
+\mathbf{La} \rightarrow \sum_{i = 1}^{m}a_iu_i(x) = a_1u_1(x) + ... + a_mu_m(x) = u(x)
+```
+
+```python
+def inner_product_polynomials_with_witness(polys, witness):
+    mul_ = lambda x, y: x * y
+    sum_ = lambda x, y: x + y
+    return reduce(sum_, map(mul_, polys, witness))
+
+term_1 = inner_product_polynomials_with_witness(U_polynomials, witness)
+
+term_2 = inner_product_polynomials_with_witness(V_polynomials, witness)
+
+term_3 = inner_product_polynomials_with_witness(W_polynomials, witness)
+```
+
+Note that `mul_` is an anonymous function that multiplies two elements component-wise, and `sum_` is an anonymous function that adds two elements together. The final `reduce` statement basically computes the pairwise product of each element in `polys` and `witness`, and then aggregates the products into a single value.
+
+To compute for $h(x)$, we simply solve for it. We cannot compute $h(x)$ unless we have a valid witness, otherwise there will be a remainder.
+
+```math
+h(x) = \frac{u(x)v(x) - w(x)}{t(x)}
+```
+
+```python
+# t = (x - 1)(x - 2)(x - 3)(x - 4)
+
+t = galois.Poly([1, 78], field = GF) *
+    galois.Poly([1, 77], field = GF) *
+    galois.Poly([1, 76], field = GF) * 
+    galois.Poly([1, 75], field = GF)
+
+# Floor division with `t`
+h = (term_1 * term_2 - term_3) // t
+```
+
+Note that `Poly([1, 78])` translates to $1 \cdot x^1 + 78 \cdot x^0 = x + 78$. And in $\mathbb{F_{79}}$, $78 \equiv -1 \mod 79$. Thus `Poly([1, 78])` is $(x - 1)$.
