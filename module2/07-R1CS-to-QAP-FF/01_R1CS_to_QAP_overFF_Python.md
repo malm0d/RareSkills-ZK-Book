@@ -330,3 +330,49 @@ h = (term_1 * term_2 - term_3) // t
 ```
 
 Note that `Poly([1, 78])` translates to $1 \cdot x^1 + 78 \cdot x^0 = x + 78$. And in $\mathbb{F_{79}}$, $78 \equiv -1 \mod 79$. Thus `Poly([1, 78])` is $(x - 1)$.
+
+Unlike [poly1d from numpy](https://numpy.org/doc/stable/reference/generated/numpy.poly1d.html), the `galois` library won't indicate if there is a remainder, so we need to check if the QAP formula still holds true:
+
+```math
+u(x)v(x) = w(x) + h(x)t(x)
+```
+
+```python
+assert term_1 * term_2 == term_3 + h * t, "Division has a remainder"
+```
+
+The check above is very similar to what the verifier will check for.
+
+The scheme above will NOT work when we evaluate the polynomials on a **hidden point** from a trusted setup. However, the computer doing the trusted setup will still have to execute many of the computations above.
+
+In this example, the QAP is simplified and polynomials are evaluated at a public point. This would not be secure because a malicious prover can forge proofs by crafting polynomials that satisfy the QAP formula only at the public point but not universally. Having a hidden point forces the prover to honestly evaluate the polynomials everywhere.
+
+<hr>
+
+A hidden point is referring to a secret value (secret scalar) used to generate structured reference strings, which contains encrypted evaluations of the public point. For instance if $s$ is the public point, then an encrypted valuation of $s$ would be $g^s$ where $g$ is a generator from a cyclic finite abelian elliptic curve group. The eventual idea is such that instead of checking:
+
+```math
+A(s) \bullet B(s) = C(s) \bullet G_2
+```
+
+The verifier uses pairing-friendly elliptic curves to validate:
+
+```math
+e(g_{1}^{\ A(s)}, g_{2}^{\ B(s)}) = e(g_{1}^{\ C(s)}, g_2) \cdot e(g_{1}^{\ h(s)}, g_2^{t(s)})
+```
+
+Which can be represented as:
+
+```math
+[A(s)]_1 \bullet [B(s)]_2 = [C(s)]_1 \bullet [1]_2 + [h(s)]_1 \bullet [t(s)]_2
+```
+
+And, if $h(s)t(s)$ is absorbed into $C(s)$, is simpliefied and reduced to:
+
+```math
+[A]_1 \bullet [B]_2 = [C]_1 \bullet [1]_2
+```
+
+**More of this in the next 2 chapters.**
+
+<hr>
