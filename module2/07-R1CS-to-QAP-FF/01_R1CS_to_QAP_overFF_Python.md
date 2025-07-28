@@ -352,7 +352,7 @@ print(u_4(4)) # 0
 
 From the evaluations, we can ascertain that the polynomial $u_4(x)$ interpolates the points: $\Bigl([1, 0], \ [2, 0], \ [3, 74], \ [4, 0] \Bigr)$. 
 
-Another way to look at this is, since $u_4(3) = 74$, we know that $y$ is present at $x = 3$, which reflects the $3^{rd}$ constraint. And since $u_4(x) = 0$ for $x = 1, 2, 4$, we also know that $y$ is no present at $x = 1, 2, 4$, which reflect the $1^{st}$, $2^{nd}$, and $4^{th}$ constraints.
+Another way to look at this is, since $u_4(3) = 74$, we know that $y$ is present at $x = 3$, which reflects the $3^{rd}$ constraint. And since $u_4(x) = 0$ for $x = 1, 2, 4$, we also know that $y$ is not present at $x = 1, 2, 4$, which reflect the $1^{st}$, $2^{nd}$, and $4^{th}$ constraints.
 
 Remember that the matrices encode the coefficients in the R1CS, so matrix $\mathbf{L}$ encodes all the coefficients for the left hand terms. Since $u_4(3)$ evalutes to $74 \mod 79$ which is equivalent to the negative representation $-5 \mod 79$, this means that the coefficient for $y$ in left hand term of the $3^{rd}$ constraint is $-5$. Of which is true.
 

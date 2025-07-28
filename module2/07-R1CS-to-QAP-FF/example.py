@@ -1,5 +1,6 @@
 import numpy as np
 import galois
+from functools import reduce
 
 p = 79
 GF = galois.GF(p)
@@ -80,8 +81,32 @@ for poly in u_polynomials:
     print(poly)
 print()
 
-
 for poly in w_polynomials:
     print(poly)
 print()
 
+def inner_product_polynomials_with_witness(polys, witness):
+    mul_ = lambda x, y: x * y
+    sum_ = lambda x, y: x + y
+    # reduce(func, iterable[])
+    return reduce(sum_, map(mul_, polys, witness))
+
+term1_ux = inner_product_polynomials_with_witness(u_polynomials, witness)
+
+term2_vx = inner_product_polynomials_with_witness(v_polynomials, witness)
+
+term3_wx = inner_product_polynomials_with_witness(w_polynomials, witness)
+
+#t = (x - 1)(x - 2)(x - 3)(x - 4)
+t = galois.Poly([1, 78], field=GF) * galois.Poly([1, 77], field=GF) * galois.Poly([1, 76], field=GF) * galois.Poly([1, 75], field=GF)
+
+# Floor division with `t`
+h = (term1_ux * term2_vx - term3_wx) // t
+
+print(term1_ux) # 78x^3 + 76x^2 + 28x + 59
+print(term2_vx) # 11x^3 + 77x^2 + 20x + 54
+print(term3_wx) # 3x^3 + 40x^2 + 20x + 32
+print(t)        # x^4 + 69x^3 + 35x^2 + 29x + 24
+print(h)        # 68x^2 + 17x + 59
+
+assert term1_ux * term2_vx == term3_wx + (h * t), "Division has a remainder"
