@@ -267,7 +267,162 @@ print(W_polynomials[:1])
 
 The term `Poly(0, GF(79))` is simply a polynomial where all coefficients are zero (a.k.a the zero polynomial or the zero vector polynomial).
 
-The reader is encouraged to evaluate the polynomials in the R1CS at the $x$ values to see they interpolate the matrix values correctly
+The reader is encouraged to evaluate the polynomials in the R1CS at the $x$ values to see they interpolate the matrix values correctly.
+
+
+### Evaluating the Polymomials in the R1CS
+Since our R1CS has $4$ rows, we know that the polynomials for each column vector in each matrix is interpolated over $x = [1, 2, 3, 4]$.
+
+Consider the R1CS, wtiness $\mathbf{a}$ and matrix $\mathbf{L}$:
+
+```math
+\begin{align*}
+v_1 &= x * x \\
+v_2 &= v_1 * v_1 \quad \quad // \ x^4 \\
+v_3 &= -5y*y \\
+z - v_2 &= v_3 * v_1 \quad \quad // \ -5y^2x^2
+\end{align*}
+```
+
+```math
+\mathbf{a} = 
+\begin{bmatrix}
+1 & z & x & y & v_1 & v_2 & v_3
+\end{bmatrix}
+```
+
+```math
+\mathbf{L} =
+\begin{bmatrix}
+0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 74 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}
+```
+
+Each column vector in $\mathbf{L}$ is interpolated into the following Lagrange interpolating polynomials:
+
+```python
+for poly in u_polynomials:
+    print(poly)
+print()
+
+# (1 column, u1(x)): 0
+# (z column, u2(x)): 0
+# (x column, u3(x)): 13x^3 + 41x^2 + 22x + 4
+# (y column, u4(x)): 42x^3 + 22x^2 + 35x + 59
+# (v1 column, u5(x)): 40x^3 + 75x^2 + 49x + 73
+# (v2 column, u6(x)): 0
+# (v3 column, u7(x)): 66x^3 + 78x^2 + 15x + 78
+```
+
+Observe that for all zero column vectors, they are interpolated into zero polynomials. And for columns that are not zero vectors, they are interpolated into some polynomial. A column vector interpolating into a non-zero polynomial indicates that the corresponding variable that the column is associated with is present in the R1CS.
+
+For matrix $\mathbf{L}$, the non zero vector columns are for $x$, $y$, $v_1$, and $v_3$, which are all correctly present in the left hand terms of the R1CS.
+
+From the code above, since:
+
+```math
+u_4(x) = 42x^3 + 22x^2 + 35x + 59
+```
+
+We know that $y$ is present as a left hand term in the R1CS. And this is true in the $3^{rd}$ constraint in the R1CS:
+
+```math
+v_3 = \underbrace{-5y}_{\text{left hand term}}*y
+```
+
+When we evaluate $u_4(x)$ over $x = [1, 2, 3, 4]$, we get the following:
+
+```math
+u_4(1) = 0, \quad
+u_4(2) = 0, \quad
+u_4(3) = 74, \quad
+u_4(4) = 0 \quad \quad \mod 79
+```
+
+```python
+u_4 = u_polynomials[3]
+print(u_4(1)) # 0
+print(u_4(2)) # 0
+print(u_4(3)) # 74
+print(u_4(4)) # 0
+```
+
+From the evaluations, we can ascertain that the polynomial $u_4(x)$ interpolates the points: $\Bigl([1, 0], \ [2, 0], \ [3, 74], \ [4, 0] \Bigr)$. 
+
+Another way to look at this is, since $u_4(3) = 74$, we know that $y$ is present at $x = 3$, which reflects the $3^{rd}$ constraint. And since $u_4(x) = 0$ for $x = 1, 2, 4$, we also know that $y$ is no present at $x = 1, 2, 4$, which reflect the $1^{st}$, $2^{nd}$, and $4^{th}$ constraints.
+
+Remember that the matrices encode the coefficients in the R1CS, so matrix $\mathbf{L}$ encodes all the coefficients for the left hand terms. Since $u_4(3)$ evalutes to $74 \mod 79$ which is equivalent to the negative representation $-5 \mod 79$, this means that the coefficient for $y$ in left hand term of the $3^{rd}$ constraint is $-5$. Of which is true.
+
+If we evaluate the polynomials for matrix $\mathbf{O}$, we see that it also evaluates correctly.
+
+```math
+\mathbf{O} =
+\begin{bmatrix}
+0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+0 & 1 & 0 & 0 & 0 & 78 & 0 
+\end{bmatrix}
+```
+
+```python
+for poly in w_polynomials:
+    print(poly)
+print()
+
+#(1 column, w1(x)): 0
+#(z column, w2(x)): 66x^3 + 78x^2 + 15x + 78
+#(x column, w3(x)): 0
+#(y column, w4(x)): 0
+#(v1 column, w5(x)): 13x^3 + 41x^2 + 22x + 4
+#(v2 column, w6(x)): 53x^3 + 76x^2 + 34x + 74
+#(v3 column, w7(x)): 39x^3 + 43x^2 + 72x + 4
+```
+
+For matrix $\mathbf{O}$, the non zero vector columns are for $z$, $v_1$, $v_2$, and $v_3$, which are all correctly present as the output terms in the R1CS.
+
+If we examine:
+
+```math
+w_6(x) = 53x^3 + 76x^2 + 34x + 74
+```
+
+We know that $v_2$ is present as an output term in the R1CS. And this is true in the $2^{nd}$ and $4^{th}$ constraints:
+
+```math
+v_2 = v_1 * v_1 \\
+z - v_2 = v_3 * v_1
+```
+
+When we evaluate $w_6(x)$ over $x = [1, 2, 3, 4]$, we get the following:
+
+```math
+w_6(1) = 0, \quad
+w_6(2) = 1, \quad
+w_6(3) = 0, \quad
+w_6(4) = 78 \quad \quad \mod 79
+```
+
+```python
+w_6 = w_polynomials[5]
+print(w_6(1)) # 0
+print(w_6(2)) # 1
+print(w_6(3)) # 0
+print(w_6(4)) # 78
+```
+
+In the same vein, since $w_6(x) = 0$ for $x = 1, 3$; and since $w_6(x) \neq 0$ for $x = 2, 4$, we know that $v_2$ is present at $x = 2, 4$, which reflects the $2^{nd}$ and $4^{th}$ constraints.
+
+Matrix $\mathbf{O}$ encodes all the coefficients of the output terms in the R1CS. Since:
+
+```math
+w_6(2) = 1 \quad \text{and} \quad w_6(4) = 78 \equiv -1 \mod 79
+```
+
+This means the coefficients for $v_2$ in the $2^{nd}$ constraint and $4^{th}$ constraint are $1$ and $-1$ respectively. Of which are both true.
 
 ## Computing $h(x)$
 Since the R1CS has 4 constraints, we know that:
