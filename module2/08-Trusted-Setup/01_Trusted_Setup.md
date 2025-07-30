@@ -86,4 +86,19 @@ g(\tau) &= \langle[0, 4, 7, 8], [\Omega_3, \Omega_2, \Omega_1, G_1]\rangle \\
 \end{align*}
 ```
 
-We have effectively computed $g(\tau)$ without knowing what $\tau$ is since it is hidden in the SRS.
+We have effectively computed $g(\tau)$ without knowing what $\tau$ is, since $\tau$ is hidden in the SRS.
+
+Because of the homomorphism $\phi$ we discussed earlier in the article, when we evaluated $g(x)$ at the secret scalar $\tau$, we computed the polynomial $g(\tau)$ "in the exponent" of the elliptic curve group. That is:
+
+```math
+\begin{align*}
+g(\tau) &= 4\Omega_2 + 7\Omega_1 + 8G_1 \\[4pt]
+g(\tau)G_1&= 4\tau^2G_1 + 7\tau G_1 + 8G1 
+\end{align*}
+```
+
+The result of the polynomial evaluation $g(\tau)$ is in fact a scalar, but it is hidden in the elliptic curve point $g(\tau)G_1$. That is to say, the evaluation at $g(\tau)G_1$ is an elliptic curve point, and $g(\tau)$ is the discrete log with respect to the generator point $G_1$.
+
+While we are able to compute the point $g(\tau)G_1$ using the SRS, it is infeasible for us to recover the scalar $g(\tau)$ itself because solving the discrete log problem is extremely difficult.
+
+This is also called a trusted setup, because although we don't know what the discrete log $g(\tau)$ is, the person who created the SRS does. This could lead to leaking information down the line, so we are technically trusting that the entity creating the trusted setup deletes $\tau$ and in no way remebers it.
