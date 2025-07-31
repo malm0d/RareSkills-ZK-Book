@@ -39,7 +39,7 @@ Now, if we introduce a secret scalar: $\tau$, and do the same computation, we'd 
 
 In elliptic curve cryptography, all operations are performed on points of an elliptic curve group. The "discrete log" of a point $P$ with respect to the generator of the elliptic curve group $G$ is the scalar $k$ such that $P = kG$. The discrete log problem is thus computationally hard and infeasible to solve. At this point, if we were to compute $f(\tau)$ directly, this would directly reveal what the actual value for $\tau$ is.
 
-Remember that when the order of the finite field is equal to the order of the elliptic curve group, every operation in the finite field has a homomorphic equivalent in the elliptic curve group. **Arithmetic (addition/scalar multiplication) in a finite field is homomorphic to arithmetic (addition/scalar multiplication) in an elliptic curve group**. Or in other words: Elliptic curves over finite fields homomorphically encrypt addition (and repeated addition) in a finite field.
+Remember that when the order of the finite field is equal to the order of the elliptic curve group, every operation in the finite field has a homomorphic equivalent in the elliptic curve group. **Addition (and scalar multiplication) in a finite field is homomorphic to addition (and scalar multiplication) in an elliptic curve group**. Or in other words: Elliptic curves over finite fields homomorphically encrypt addition (and repeated addition) in a finite field.
 
 That is, if we compute: $\tau G_1$, we are effectively encoding $\tau$ in the exponent of $G_1$.
 
@@ -54,7 +54,7 @@ That is, if we compute: $\tau G_1$, we are effectively encoding $\tau$ in the ex
 Where:
 - $a, b \in \mathbb{F_p}$ (scalars, which also includes $\tau \in \mathbb{F_p}$).
 -  $G_1$ is the generator for the elliptic curve group $G_1$.
-- $+$ denotes addition (arithmetic) in $\mathbb{F_p}$.
+- $+$ denotes addition in $\mathbb{F_p}$.
 - $\oplus$ denotes point addition on the elliptic curve group.
 
 Thus, when we multiply each of the points in $[\tau^3, \tau^2, \tau, 1]$ with a generator point of a cryptographic elliptic curve group (e.g. $G_1$), we'd get the result:
@@ -88,6 +88,8 @@ g(\tau) &= \langle[0, 4, 7, 8], [\Omega_3, \Omega_2, \Omega_1, G_1]\rangle \\
 
 We have effectively computed $g(\tau)$ without knowing what $\tau$ is, since $\tau$ is hidden in the SRS.
 
+Notice that we have $0$ in the slot for the coefficeint of the $x^3$ term as the polynomial is only of degree $=2$ (there is no $x^3$ term).
+
 Because of the homomorphism $\phi$ we discussed earlier in the article, when we evaluated $g(x)$ at the secret scalar $\tau$, we computed the polynomial $g(\tau)$ "in the exponent" of the elliptic curve group. That is:
 
 ```math
@@ -102,3 +104,107 @@ The result of the polynomial evaluation $g(\tau)$ is in fact a scalar, but it is
 While we are able to compute the point $g(\tau)G_1$ using the SRS, it is infeasible for us to recover the scalar $g(\tau)$ itself because solving the discrete log problem is extremely difficult.
 
 This is also called a trusted setup, because although we don't know what the discrete log $g(\tau)$ is, the person who created the SRS does. This could lead to leaking information down the line, so we are technically trusting that the entity creating the trusted setup deletes $\tau$ and in no way remebers it.
+
+```python
+from py_ecc.bn128 import G1, multiply, add
+from functools import reduce
+
+def inner_product(coeffs, points):
+    return reduce(add, map(multiply, points, coeffs))
+
+## Trusted setup
+tau = 88
+degree = 3
+
+# SRS = tau^3, tau^2, tau, 1
+# range(start, stop(not inclusive), step)
+# range(3, -1, -1) = [3, 2, 1, 0]
+srs = [multiply(G1, tau**i) for i in range(degree, -1, -1)]
+
+## Evaluate
+# p(s) = 4x^2 + 7x + 8
+coeffs = [0, 4, 7, 8]
+```
+
+## Verifying a Trusted Setup was Generated Properly
+Given a SRS, how do we know that it follows the descending structure $[x^d, x^{d-1}, ..., x, 1]$, or more specifically:
+
+```math
+[\Omega_d, \Omega_{d-1}, ..., \Omega_1, G_1] \quad (\text{or }
+[\tau^d, \tau^{d-1}, ..., \tau, 1])
+```
+
+And that it wasn't randomly (and haphazardly) chosen?
+
+Remember what we learned about the property of an elliptic curve [bilinear pairing](https://rareskills.io/post/bilinear-pairing):
+
+```math
+e(G,\, G)^{ab} = e(aG_1, bG_2) = e(abG_1, G_2) = e(G_1, abG_2)
+```
+
+If the party doing the trusted setup provides $\Theta=\tau G_2$, we can validate that the SRS is indeed in successive powers of $\tau$. We can use the following:
+
+```math
+e(\Theta, \Omega_i) \stackrel{?}{=} e(G_2, \Omega_{i+1})
+```
+
+Where $e$ is a bilinear pairing. Intuitively, we are computing $\tau \cdot \tau^i$ on the left hand side of the equality and $1 \cdot \tau^{i+1}$ on the right hand side of the equality. The above can be further expressed as such:
+
+```math
+\begin{align*}
+e(\Theta, \Omega_i) &\stackrel{?}{=} e(G_2, \Omega_{i+1}) \\[4pt]
+e(\tau G_2, \tau^iG_1) &\stackrel{?}{=} e(G_2, \tau^{i+1}G_1) \\[4pt]
+e(G_2, G_1)^{\tau \cdot \tau^i} &\stackrel{?}{=} e(G_2, G_1)^{\tau^{i+1}} \\[4pt]
+e(G_2, G_1)^{\tau^{1 + i}} &\stackrel{?}{=} e(G_2, G_1)^{\tau^{i+1}}
+\end{align*}
+```
+
+By virtue of the homomorphism between addition in a finite field and addition in an elliptic curve group, we are effectively comparing exponents:
+
+```math
+\tau^{1+i} \stackrel{?}{=} \tau^{i + 1}
+```
+
+This ensures that $\Omega_i \cdot \tau = \Omega_{i+1}$. That is, each $\Omega_i$ is $\tau^iG_1$.
+
+Therefore to validate that $\Theta$ and $\Omega_1$ have the same discrete logarithms (where $\Omega_1 = \tau G_1$), we can check the bilinear pairings:
+
+```math
+e(\Theta, G_1) \stackrel{?}{=} e(G_2, \Omega_1) \\[4pt]
+e(\tau G_2, G_1) \stackrel{?}{=} e(G_2, \tau G_1) \\[4pt]
+e(G_2, G_1)^\tau \stackrel{?}{=} e(G_2, G_1)^\tau
+```
+
+## Generating a SRS as part of a Multiparty Computation (Powers of $\tau$ Ceremony)
+It is not a good enough assumption that the party that generated the SRS actually deleted the secret scalar $\tau$.
+
+The following describes the algorithm for multiple parties to collaboratively create the SRS; and as long as one of them is honest (i.e. deletes $\tau$), then the discrete logs of the SRS will never be known.
+
+Alice generates the SRS: ($[\Omega_n, \Omega_{n-1}, ..., \Omega_2, \Omega_1, G_1], \Theta$), where $\Theta = \tau G_2$, and then passes it to Bob.
+
+Bob verifies that the SRS is indeed in successive powers of $\tau$ by performing the bilinear pairing checks as described earlier.
+
+Next, Bob selects his own secret scalar: $\gamma$. Then, using the SRS he just verified, Bob - adhering to the structure of the SRS, computes:
+
+```math
+([\gamma^n\Omega_n, \ \gamma^{n-1}\Omega_{n-1}, \ ..., \ \gamma^2\Omega_2, \ \gamma\Omega_1, \ G_1], \ \gamma\Theta)
+```
+
+Which translates to:
+
+```math
+([(\gamma\tau)^nG_1, \ (\gamma\tau)^{n-1}G_1, \ ..., \ (\gamma\tau)^2G_1, \ (\gamma\tau)G_1, \ G_1], \ (\gamma\tau)G_2)
+```
+
+This effectively results in the discrete logs of the SRS to be:
+
+```math
+([(\gamma\tau)^n, \ (\gamma\tau)^{n-1}, \ ..., \ (\gamma\tau)^2G_1, \ (\gamma\tau), \ 1], \ (\gamma\tau))
+```
+
+If Alice or Bob deletes $\tau$ or $\gamma$, then the discrete logs of the SRS can never be recoverable.
+
+This is just an example showing two parties involved in the generation of the SRS, in reality, there can be as many parties involved in the process as needed. This multiparty computation is often informally referred to as the **powers of $\tau$ ceremony**.
+
+## The Use of a Trusted Setup in ZK-SNARKs
+Evaluating a polynomial on a structured reference string doesn’t reveal information about the polynomial to the verifier, and the prover doesn’t know what point they are evaluating on. We will see later that this scheme helps prevent the prover from cheating and helps keep their witness zero knowledge.
