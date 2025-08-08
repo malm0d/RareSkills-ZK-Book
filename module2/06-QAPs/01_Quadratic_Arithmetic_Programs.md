@@ -207,7 +207,7 @@ This is critical because equality testing with vectors takes $\mathcal{O}(n)$ ti
 
 FYI: vector addition and polynomial addition are isomorphic (structurally identical, so this is one case where the homomorphism is bi-directional).
 
-We know that testing for R1CS equality takes $\mathcal{O}(n)$ time since it requires comparing all $n$ constraints. Thus, we can leverage the homomorphism between vectors in a finite field under addition and polynomials in a finite field under addition, in order to test for R1CS equality in $\mathcal{O}(n)$ time.
+We know that testing for R1CS equality takes $\mathcal{O}(n)$ time since it requires comparing all $n$ constraints. Thus, we can leverage the homomorphism between vectors in a finite field under addition and polynomials in a finite field under addition, in order to test for R1CS equality in $\mathcal{O}(1)$ time.
 
 This is what a Quadratic Arithmetic Program is.
 
@@ -725,7 +725,7 @@ Although the underlying vectors on both sides of the equality are equal, the pol
 
 Another way to put it, the polynomials $u(x)v(x)$ and $w(x)$ may evaulate to the same values at specific points $x = [1, 2, ...n]$, but they are not the same polynomial because their degrees differ (which is to say $u(x)v(x)$ and $w(x)$ are distinct polynomials).
 
-**This is because the homorphisms we established earlier only make claims about vector addition (and vector scalar multiplcation), not Hadamard product.**
+**This is because the homorphisms we established earlier only make claims about vector addition (and vector scalar multiplcation), not Hadamard product (of vectors).**
 
 Meaning, we cannot naively assert that $u(x)v(x) = w(x)$ as polynomials, even though their evaluations (underlying vectors they interpolate) match. This mismatch occurs because:
 - The homomorphism $\mathcal{L}$ preserves linear operations (addition/scalar multiplication), but not multiplicative operations like the Hadamard product.

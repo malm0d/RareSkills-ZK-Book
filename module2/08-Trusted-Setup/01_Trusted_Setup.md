@@ -124,6 +124,8 @@ srs = [multiply(G1, tau**i) for i in range(degree, -1, -1)]
 ## Evaluate
 # p(s) = 4x^2 + 7x + 8
 coeffs = [0, 4, 7, 8]
+
+poly_at_tau = inner_product(srs, coeffs)
 ```
 
 ## Verifying a Trusted Setup was Generated Properly
@@ -199,7 +201,7 @@ Which translates to:
 This effectively results in the discrete logs of the SRS to be:
 
 ```math
-([(\gamma\tau)^n, \ (\gamma\tau)^{n-1}, \ ..., \ (\gamma\tau)^2G_1, \ (\gamma\tau), \ 1], \ (\gamma\tau))
+([(\gamma\tau)^n, \ (\gamma\tau)^{n-1}, \ ..., \ (\gamma\tau)^2, \ (\gamma\tau), \ 1], \ (\gamma\tau))
 ```
 
 If Alice or Bob deletes $\tau$ or $\gamma$, then the discrete logs of the SRS can never be recoverable.
