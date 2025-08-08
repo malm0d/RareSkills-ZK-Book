@@ -159,3 +159,5 @@ To summarize the above cases, after reducing the above polynomials, we get the f
 \mathbf{Oa} &\rightarrow \sum_{i = 1}^{4}a_iw_i(x) = w_{2a}x^2 + w_{1a}x + w_{0a}
 \end{align*}
 ```
+
+## Combining a Trusted Setup with a QAP
