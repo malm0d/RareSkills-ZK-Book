@@ -37,7 +37,7 @@ An element in $\mathbb{G_1}$ is notated as $[X]_1$. And an element in $\mathbb{G
 
 An [elliptic curve pairing (bilinear pairing)](https://rareskills.io/post/bilinear-pairing) between two elliptic curve points is denoted as $[X]_1 \bullet [Y]_2$.
 
-For a matrix $\mathbf{L}$, let $\mathbf{L}_{(*, j)}$ denote all rows (*) and the $j$-th column of the matrix.
+For a matrix $\mathbf{L}$, let $\mathbf{L}_{(*,\ j)}$ denote all rows (*) and the $j$-th column of the matrix.
 
 Let $\mathcal{L}(\mathbf{L}_{(*,\ j)})$ denote the interpolating polynomial obtained from running Lagrange interpolation on the $j$-th column of $\mathbf{L}$, using the set of $x = [1, 2, 3]$ (which we established earlier). And the values of the $j$-th column would thus represent the $y$ values.
 
@@ -161,3 +161,75 @@ To summarize the above cases, after reducing the above polynomials, we get the f
 ```
 
 ## Combining a Trusted Setup with a QAP
+We can now apply the [structured reference string (SRS) from the trusted setup](https://rareskills.io/post/trusted-setup) to evaluate the polynomials.
+
+In the previous chaper, we established the general notation:
+
+```math
+\Omega_i = \tau^iG_1 \\
+\Theta_i = \tau^iG_2
+```
+
+Given the SRS:
+
+```math
+[\Omega_2, \Omega_1, G_1], \ [\Theta_2, \Theta_1, G_2] 
+\quad \text{where}\quad 
+\begin{cases}\Omega_i \in \mathbb{G_1} \\ \Theta_i \in \mathbb{G_2} \end{cases}
+```
+
+Which was computed during the trusted setup as:
+
+```math
+[\Omega_2, \Omega_1, G_1] = [\tau^2 G_1, \tau G_1, G_1]
+\\
+[\Theta_2, \Theta_1, G_2] = [\tau^2 G_2, \tau G_2, G_2]
+```
+
+We can thus compute:
+
+```math
+\begin{align*}
+[A]_1 &= \sum_{i=1}^{4}a_iu_i(\tau) = \langle[u_{2a}, u_{1a}, u_{0a}], [\Omega_2, \Omega_1, G_1]\rangle
+\\
+[B]_2 &= \sum_{i=1}^{4}a_iv_i(\tau) = \langle[v_{2a}, v_{1a}, v_{0a}], [\Theta_2, \Theta_1, G_1]\rangle
+\\
+[C]_1 &= \sum_{i=1}^{4}a_iw_i(\tau) = \langle[w_{2a}, w_{1a}, w_{0a}], [\Omega_2, \Omega_1, G_1]\rangle
+\end{align*}
+```
+
+Note that $u_i(\tau)$, $v_i(\tau)$, $w_i(\tau)$ mean that the polynomials are already evaluated using the SRS generated from $\tau$ in the trusted setup, it does not mean "plug in $\tau$ and evaluate the polynomials". In other words, $u_i(\tau)$, $v_i(\tau)$, and $w_i(\tau)$ are already scalar values but hidden as an elliptic curve points. It goes without saying that elliptic curve points $[A]_1, [C]_1 \in \mathbb{G_1}$, and elliptic curve point $[B]_2 \in \mathbb{G_2}$.
+
+Since $\tau$ should have been destroyed after the trusted setup, the value for $\tau$ should be unknown.
+
+We have computed most of the QAP using the SRS, but we have not computed $h(x)t(x)$ yet:
+
+```math
+\underbrace{\sum_{i = 1}^{4}a_iu_i(x)}_{[A]_1} 
+\underbrace{\sum_{i=1}^{4}a_iv_i(x)}_{[B]_2} = 
+\underbrace{\sum_{i=1}^{4}a_iw_i(x)}_{[C]_1} + 
+\underbrace{h(x)t(x)}_{???}
+```
+
+FYI, when we write $[\sum a_iu_i(\tau)]_1$, or for the matter any $[A]_1$ or $[p(\tau)]$, we mean an elliptic-curve point that serves as a commitment to that field value/evaluation at the secret $\tau$. TLDR, a commitment.
+
+## Computing $h(x)t(x)$
+By definition, we know that $t(x)$ has degree $= n$. Thus for our example, we know that the degree of $t(x) = 3$.
+
+We also know that from the QAP formula, the degree of $h(x) = n - 2$. Which means for our example, we know that the defree of $h(x) = 1$.
+
+If we multiply $t(x)$ and $h(x)$ together, we could get up to a degree $= 4$ polynomial, which is more than what the powers of tau ceremony (generation of the SRS) provides. Instead, the powers of tau ceremony must now be adjusted to provide a structured reference string for $h(x)t(x)$.
+
+The person doing the trusted setup knows that the polynomial $t(x) = (x - 1)(x - 2)...(x-n)$. Thus $t(x)$ is considered public.
+
+However, the polynomial $h(x)$ is computed by the prover, and it changes based on the values of the witness $\mathbf{a}$; and so $h(x)$ cannot be known during the trusted setup. Which means $h(x)$ is considered private.
+
+Also note that we cannot evaluate $h(\tau)$ and $t(\tau)$ separately (using a SRS) and then put them in a bilinear pairing together. This would not result in a $\mathbb{G_1}$ element which is what we ultimately need, as $[h(\tau)t(\tau)]_1$, for Groth16.
+
+This means we simply cannot compute $[h(\tau)]_1$ and $[t(\tau)]_2$ separately using an SRS (like in the above section); and then pair them as $[h(\tau)]_1 \bullet [t(\tau)]_2$ to verify that it is equivalent to $e(G_1, G_2)^{h(\tau)t(\tau)}$. As this results in an element in $\mathbb{G_T}$. Also, consider that $\tau$ is always unknown.
+
+Remember that $h(\tau)t(\tau)$ needs to be added to $[C]_1$ as defined by the QAP formula. There is no structure-preserving way to go from $G_T \rightarrow G_1$; so the SRS must be adjusted in a way to "bake" $t(\tau)$ into the $\mathbb{G_1}$ side of the SRS, and allow the prover to use only the SRS and only the coefficients of $h(x)$ to form the commitment $[h(\tau)t(\tau)]_1$, without having the prover ever knowing $\tau$ or $t(\tau)$.
+
+This will be clearer in a bit.
+
+## SRS for Polynomial Products, such as $h(x)t(x)$
