@@ -37,7 +37,7 @@ An element in $\mathbb{G_1}$ is notated as $[X]_1$. And an element in $\mathbb{G
 
 An [elliptic curve pairing (bilinear pairing)](https://rareskills.io/post/bilinear-pairing) between two elliptic curve points is denoted as $[X]_1 \bullet [Y]_2$.
 
-For a matrix $\mathbf{L}$, let $\mathbf{L}_{(*,\ j)}$ denote all rows (*) and the $j$-th column of the matrix.
+For a matrix $\mathbf{L}$, let $\mathbf{L}_{(*, j)}$ denote all rows (*) and the $j$-th column of the matrix.
 
 Let $\mathcal{L}(\mathbf{L}_{(*,\ j)})$ denote the interpolating polynomial obtained from running Lagrange interpolation on the $j$-th column of $\mathbf{L}$, using the set of $x = [1, 2, 3]$ (which we established earlier). And the values of the $j$-th column would thus represent the $y$ values.
 
