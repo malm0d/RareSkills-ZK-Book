@@ -104,7 +104,7 @@ We can make a couple of general observations about the degrees of the polynomial
 
 - Multiplying polynomials adds their degrees together, and dividing polynomials subtract their degrees.
 
-Therefore, $h(x)$ will be at most degree $= n-2$ because from the QAP formula:
+Therefore, $h(x)$ will be at most degree $\le n-2$ because from the QAP formula:
 
 ```math
 \underbrace{n-1}_{degree \ u(x)} + \underbrace{n-1}_{degree \ v(x)} - \underbrace{n}_{degree \ t(x)} = \underbrace{n - 2}_{degree \ h(x)}
@@ -224,12 +224,85 @@ The person doing the trusted setup knows that the polynomial $t(x) = (x - 1)(x -
 
 However, the polynomial $h(x)$ is computed by the prover, and it changes based on the values of the witness $\mathbf{a}$; and so $h(x)$ cannot be known during the trusted setup. Which means $h(x)$ is considered private.
 
-Also note that we cannot evaluate $h(\tau)$ and $t(\tau)$ separately (using a SRS) and then put them in a bilinear pairing together. This would not result in a $\mathbb{G_1}$ element which is what we ultimately need, as $[h(\tau)t(\tau)]_1$, for Groth16.
+Also note that we cannot evaluate $h(\tau)$ and $t(\tau)$ separately (using a SRS) and then put them in a bilinear pairing together. This would not result in a $\mathbb{G_1}$ element which is what we ultimately need - as $[h(\tau)t(\tau)]_1$, for Groth16.
 
 This means we simply cannot compute $[h(\tau)]_1$ and $[t(\tau)]_2$ separately using an SRS (like in the above section); and then pair them as $[h(\tau)]_1 \bullet [t(\tau)]_2$ to verify that it is equivalent to $e(G_1, G_2)^{h(\tau)t(\tau)}$. As this results in an element in $\mathbb{G_T}$. Also, consider that $\tau$ is always unknown.
 
-Remember that $h(\tau)t(\tau)$ needs to be added to $[C]_1$ as defined by the QAP formula. There is no structure-preserving way to go from $G_T \rightarrow G_1$; so the SRS must be adjusted in a way to "bake" $t(\tau)$ into the $\mathbb{G_1}$ side of the SRS, and allow the prover to use only the SRS and only the coefficients of $h(x)$ to form the commitment $[h(\tau)t(\tau)]_1$, without having the prover ever knowing $\tau$ or $t(\tau)$.
+Remember that $h(\tau)t(\tau)$ needs to be added to $[C]_1$ as defined by the QAP formula. There is no structure-preserving way to go from $\mathbb{G_T} \rightarrow \mathbb{G_1}$; so the SRS must be adjusted in a way to "bake" $t(\tau)$ into the $\mathbb{G_1}$ side of the SRS, and allow the prover to use only the SRS and only the coefficients of $h(x)$ to form the commitment $[h(\tau)t(\tau)]_1$, without having the prover ever knowing $\tau$ or $t(\tau)$.
 
 This will be clearer in a bit.
 
 ## SRS for Polynomial Products, such as $h(x)t(x)$
+
+Observe that the following computations all result in the same value:
+- The polynomial $h(x)t(x)$ evaluated at $u$, or: $(h(x)t(x))(u)$
+    - Multiply $h(x)$ and $t(x)$, and then evaluate at $u$
+- $h(u)$ multiplied by $t(u)$, or: $h(u)t(u)$
+    - Evaluate $h$ at $u$, evaluate $t$ at $u$, and then multiply
+- $h(x)$ multiplied by the evaluataion of $t(u)$, then evaluated at $u$, or: $(h(x)t(u))(u)$
+    - Evaluate $t$ at $u$, then multiply the resulting scalar with $h(x)$, then evaluate at $u$
+
+We will use the third method: $(h(x)t(u))(u)$, to compute the polynomial $h(\tau)t(\tau)$.
+
+Suppose, without loss of generality, that:
+
+```math
+\begin{align*}
+h(x) &= 3x^2 + 6x + 2 \\[4pt]
+t(u) &= 4
+\end{align*}
+```
+
+Then computing $h(x)t(u)$ would yield:
+
+```math
+\begin{align*}
+h(x)t(u) &= (3x^2 + 6x + 2) \cdot 4 \\
+&= 12x^2 + 24x + 8
+\end{align*}
+```
+
+If we then plug $u$ into $12x^2 + 24x + 8$, that would give us the polynomial $h(u)t(u)$.
+
+However, evaluating this polynomial at $\tau$ would requrie the prover to know the value of $\tau$, i.e. plugging $\tau$ into $h(u)t(u)$.
+
+The key insight here, is that we can break the polynomial down and structure the computation of $h(u)t(u)$ as:
+
+```math
+\begin{align*}
+h(u)t(u) &= 12u^2 + 24u + 8 \\[4pt]
+&= \langle [3, 6, 2], [4u^2, 4u, 4] \rangle
+\end{align*}
+```
+
+If the trusted setup provides $[4u^2, 4u, 4]$, and the prover provides $[3, 6, 2]$, then the prover would be able to compute $h(u)t(u)$ without knowing what $u$ is, since everything involving $u$ is already in the right vector of the inner product.
+
+## SRS for $h(\tau)t(\tau)$
+
+Recall that $t(x)$ has degree $= n$, which is the number of constraints (rows) we have in the R1CS. And $h(x)$ has degree $\le n - 2$ by definition of the QAP. This means we can expect the polynomial $h(x)t(x)$ to be degree $= n + (n-2) = 2n - 2$.
+
+In zk-SNARKs like Groth16 and PLONK, the prover needs to compute $[h(\tau)t(\tau)]_1$ (a commitment in $\mathbb{G_1}$) without knowing $\tau$, by using the SRS from the trusted setup.
+
+However, the prover only needs to compute $h(x)t(x)$ evaluated at $\tau$ without actually knowing what $\tau$ is (i.e, computing $h(\tau)t(\tau)$ as a single field element (scalar), then committed to $\mathbb{G_1}$ as $[h(\tau)t(\tau)]_1$).
+
+To allow this, an SRS can provide precomputed $\mathbb{G_1}$ points (just like how we observed in the trusted setup - where $\Omega_i = \tau^i G_1$, and $\Theta_i = \tau^i G_2$) to allow the prover to construct $[h(\tau)t(\tau)]_1$. We use terms of the following (similar) form:
+
+```math
+\Upsilon_i = \tau^i \cdot t(\tau) \cdot G_1 \quad \text{where} \quad i = [0, 1, 2, ..., n-2]
+```
+
+It goes without saying that $t(\tau)$ is a scalar since $t(x)$ is already evaluated at $\tau$ when the SRS was created.
+
+Note that, somewhat confusingly, a polynonial of degree $k$ will have $k + 1$ terms. Since $h(x)$ has the degree $= n-2$, then this means $h(x)$ will have $(n - 2 + 1) = n - 1$ terms. Therefore we generate $n - 1$ evaluations (terms) for $h(x)$ - a polynomial of degree $n - 2$.
+
+```math
+[\Upsilon_{n-2}, \ \Upsilon_{n-3}, \ ..., \ \Upsilon_2, \ \Upsilon_1, \ \Upsilon_0] = [\tau^{n-2}t(\tau)G_1, \ \tau^{n-3}t(\tau)G_1, \ ..., \ \tau^{2}t(\tau)G_1, \ \tau t(\tau)G_1, \ t(\tau)G_1,]
+```
+
+Recall that we have to construct the SRS in successsive powers of the polynomial terms in descending order. Here, $\Upsilon_{n-2}$ represents the $(n-1)^{\text{th}}$ term, and $\Upsilon_0$ represents the last term of the polynomial (the zero-th term i.e. the constant).
+
+To use the SRS to compute $[h(\tau)t(\tau)]_1$, the prover does the following:
+
+```math
+h(\tau)t(\tau) = \langle \rangle
+```
