@@ -296,13 +296,67 @@ It goes without saying that $t(\tau)$ is a scalar since $t(x)$ is already evalua
 Note that, somewhat confusingly, a polynonial of degree $k$ will have $k + 1$ terms. Since $h(x)$ has the degree $= n-2$, then this means $h(x)$ will have $(n - 2 + 1) = n - 1$ terms. Therefore we generate $n - 1$ evaluations (terms) for $h(x)$ - a polynomial of degree $n - 2$.
 
 ```math
-[\Upsilon_{n-2}, \ \Upsilon_{n-3}, \ ..., \ \Upsilon_2, \ \Upsilon_1, \ \Upsilon_0] = [\tau^{n-2}t(\tau)G_1, \ \tau^{n-3}t(\tau)G_1, \ ..., \ \tau^{2}t(\tau)G_1, \ \tau t(\tau)G_1, \ t(\tau)G_1,]
+[\Upsilon_{n-2}, \ \Upsilon_{n-3}, \ ..., \ \Upsilon_2, \ \Upsilon_1, \ \Upsilon_0] = [\tau^{n-2}t(\tau)G_1, \ \tau^{n-3}t(\tau)G_1, \ ..., \ \tau^{2}t(\tau)G_1, \ \tau t(\tau)G_1, \ t(\tau)G_1]
 ```
 
 Recall that we have to construct the SRS in successsive powers of the polynomial terms in descending order. Here, $\Upsilon_{n-2}$ represents the $(n-1)^{\text{th}}$ term, and $\Upsilon_0$ represents the last term of the polynomial (the zero-th term i.e. the constant).
 
-To use the SRS to compute $[h(\tau)t(\tau)]_1$, the prover does the following:
+To use the SRS to compute $[h(\tau)t(\tau)]_1$, the prover performs the following inner product:
 
 ```math
-h(\tau)t(\tau) = \langle \rangle
+h(\tau)t(\tau) = \langle[h_{n-2}, h_{n-3}, ..., h_{2}, h_{1}, h_{0}], [\Upsilon_{n-2}, \Upsilon_{n-3}, ..., \Upsilon_{2}, \Upsilon_{1}, \Upsilon_{0}] \rangle
+```
+
+Where $h_{n-2}, h_{n-3}, ..., h_{2}, h_{1}, h_{0}$ are the coefficients of polynomial $h(x)$.
+
+And just like during the trusted setup, $h(\tau)t(\tau)$ evaluates to a scalar that will be commited as an elliptic curve point.
+
+```math
+\begin{align*}
+h(\tau)t(\tau) &= \langle[h_{n-2}, h_{n-3}, ..., h_{2}, h_{1}, h_{0}], [\Upsilon_{n-2}, \Upsilon_{n-3}, ..., \Upsilon_{2}, \Upsilon_{1}, \Upsilon_{0}] \rangle 
+\\[4pt]
+&= h_{n-2}\Upsilon_{n-2} + h_{n-3}\Upsilon_{n-3} + ..., + h_{2}\Upsilon_{2} + h_{1}\Upsilon_{1} + h_{0}\Upsilon_{0}
+\\[4pt]
+&= h_{n-2}\tau^{n-2}t(\tau)G_1 + h_{n-3}\tau^{n-3}t(\tau)G_1 + ... + h_{2}\tau^{2}t(\tau)G_1 + h_{1}\tau t(\tau)G_1 + h_{0}t(\tau)G_1
+\\[4pt]
+&= [h(\tau)t(\tau)]_1
+\end{align*}
+```
+
+## Evaluating a QAP on a Trusted Setup
+
+Now we can tie everything together. Suppose we have an R1CS with matrices of $n$ rows and $m$ columns. From this, we can apply Lagrange interpolation to convert it into a QAP.
+
+```math
+\sum_{i = 1}^{m}a_iu_i(x) \sum_{i = 1}^{m}a_iv_i(x) = \sum_{i = 1}^{m}a_iw_i(x) + h(x)t(x)
+```
+
+We establish that our R1CS has $n$ constraints, and therefore we will be interpolating over $x = [1, 2, ..., n]$. And by Lagrange interpolation, each sum term will yield a polynomial of degree $=n - 1$ (because a Lagrange interpolating polynomial will have degree $\le n - 1$ by definition, where $n$ is the number of points being interpolated).
+
+We also know that $t(x)$ will have degree $= n$ (since there are $n$ constraints in the R1CS); and that by definition of the QAP formula, $h(x)$ will have degree $= n - 2$.
+
+A trusted setup generates a random field element: $\tau$, and computes the following SRS:
+
+```math
+\begin{align*}
+[\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1] &= [\tau^{n-1}G_1, \tau^{n-2}G_1, ..., \tau G_1, G_1] 
+\\[4pt]
+[\Theta_{n-1}, \Theta_{n-2}, ..., \Theta_{1}, G_2] &= [\tau^{n-1}G_2, \tau^{n-2}G_2, ..., \tau G_2, G_2]
+\\[4pt]
+[\Upsilon_{n-2}, \Upsilon_{n-3}, ..., \Upsilon_{1}, \Upsilon_{0}] &= [\tau^{n-2}t(\tau)G_1, \tau^{n-3}t(\tau)G_1, ..., \tau t(\tau)G_1, t(\tau)G_1]
+\end{align*}
+```
+
+Note that each SRS is used to evaluate different polynomials in the QAP. Also, each SRS needs to have enough terms to accomodate the polynomials in the QAP.
+
+```math
+\begin{align*}
+\sum_{i = 1}^{m}a_iu_i(x) &\stackrel{\text{evaluated by}}{\Longleftarrow} [\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1]
+\\[12pt]
+\sum_{i = 1}^{m}a_iv_i(x) &\stackrel{\text{evaluated by}}{\Longleftarrow} [\Theta_{n-1}, \Theta_{n-2}, ..., \Theta_{1}, G_2]
+\\[12pt]
+\sum_{i = 1}^{m}a_iw_i(x) &\stackrel{\text{evaluated by}}{\Longleftarrow} [\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1]
+\\[12pt]
+h(x)t(x) &\stackrel{\text{evaluated by}}{\Longleftarrow} [\Upsilon_{n-2}, \Upsilon_{n-3}, ..., \Upsilon_{1}, \Upsilon_{0}]
+\end{align*}
 ```
