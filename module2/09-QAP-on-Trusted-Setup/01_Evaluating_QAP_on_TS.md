@@ -347,16 +347,75 @@ A trusted setup generates a random field element: $\tau$, and computes the follo
 \end{align*}
 ```
 
-Note that each SRS is used to evaluate different polynomials in the QAP. Also, each SRS needs to have enough terms to accomodate the polynomials in the QAP.
+Note that each SRS will be used to evaluate different polynomials in the QAP. Also, each SRS needs to have enough terms to accomodate the polynomials in the QAP.
 
 ```math
 \begin{align*}
-\sum_{i = 1}^{m}a_iu_i(x) &\stackrel{\text{evaluated by}}{\Longleftarrow} [\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1]
+\sum_{i = 1}^{m}a_iu_i(x) &\stackrel{\text{evaluated with}}{\Longleftarrow} [\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1]
 \\[12pt]
-\sum_{i = 1}^{m}a_iv_i(x) &\stackrel{\text{evaluated by}}{\Longleftarrow} [\Theta_{n-1}, \Theta_{n-2}, ..., \Theta_{1}, G_2]
+\sum_{i = 1}^{m}a_iv_i(x) &\stackrel{\text{evaluated with}}{\Longleftarrow} [\Theta_{n-1}, \Theta_{n-2}, ..., \Theta_{1}, G_2]
 \\[12pt]
-\sum_{i = 1}^{m}a_iw_i(x) &\stackrel{\text{evaluated by}}{\Longleftarrow} [\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1]
+\sum_{i = 1}^{m}a_iw_i(x) &\stackrel{\text{evaluated with}}{\Longleftarrow} [\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1]
 \\[12pt]
-h(x)t(x) &\stackrel{\text{evaluated by}}{\Longleftarrow} [\Upsilon_{n-2}, \Upsilon_{n-3}, ..., \Upsilon_{1}, \Upsilon_{0}]
+h(x)t(x) &\stackrel{\text{evaluated with}}{\Longleftarrow} [\Upsilon_{n-2}, \Upsilon_{n-3}, ..., \Upsilon_{1}, \Upsilon_{0}]
 \end{align*}
 ```
+
+Then, the trusted setup destroys $\tau$, and publishes the structured reference strings:
+
+```math
+\Bigl( [\Omega_2, \Omega_1, G_1], \ [\Theta_2, \Theta_1, G_2], \ [\Upsilon_{n-2}, \Upsilon_{n-3}, ..., \Upsilon_{1}, \Upsilon_{0}] \Bigl)
+```
+
+With the SRS, the prover evaluates the components of the QAP and commits them as elliptic curve points as follows:
+
+```math
+\underbrace{\sum_{i = 1}^{m}a_iu_i(x)}_{A} \underbrace{\sum_{i = 1}^{m}a_iv_i(x)}_{B} = \underbrace{\sum_{i = 1}^{m}a_iw_i(x) + h(x)t(x)}_{C}
+```
+
+```math
+\begin{align*}
+[A]_1 &= \sum_{i = 1}^{m}a_iu_i(x) = \langle[u_{(n-1)a}, u_{(n-2)a}, ..., u_{1a}, u_{0a}],[\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1]\rangle
+\\[12pt]
+[B]_2 &= \sum_{i = 1}^{m}a_iv_i(x) = \langle[v_{(n-1)a}, v_{(n-2)a}, ..., v_{1a}, v_{0a}],[\Theta_{n-1}, \Theta_{n-2}, ..., \Theta_{1}, G_2] \rangle
+\\[12pt]
+[C]_1 &= \sum_{i = 1}^{m}a_iw_i(x) + h(x)t(x) \\ &= \langle [w_{(n-1)a}, w_{(n-2)a}, ..., w_{1a}, w_{0a}],[\Omega_{n-1}, \Omega_{n-2}, ..., \Omega_{1}, G_1] + [h_{n-2}, h_{n-3}, ..., h_{1}, h_{0}],[\Upsilon_{n-2}, \Upsilon_{n-3}, ..., \Upsilon_{1}, \Upsilon_{0}]\rangle
+\end{align*}
+```
+
+The prover then publishes: $([A]_1, [B]_2, [C]_1)$, and the verifier can check that:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [C]_1 \bullet G_2
+```
+
+<hr>
+
+Observe that in the structured reference strings, there are two $\Omega$ terms provided and two $\Theta$ terms provided. There is a good reason for this.
+
+We know that the SRS provides precomputed ellptic curve points in $\mathbb{G_1}$ and $\mathbb{G_2}$, which will allow the prover to commit polynomials evaluated at the secret scalar $\tau$ (without knowing $\tau$), and the verifier to check these commitments using bilinear pairings.
+
+Many zk-SNARKs (like Groth16) require the prover to compute quadratic combinations of polynomials, for example: $a(x) = a_2x^2 + a_1x + a_0$. With the above SRS, the prover can commit to the polynomial $a(x)$ in $\mathbb{G_1}$ evaluated at the secret scalar $\tau$ without knowing $\tau$ itself.
+
+```math
+[a(\tau)]_1 = a_2\Omega_2 + a_1\Omega_1 + a_0G_1
+```
+
+With the same SRS, a polynomial $b(x) = b_2x^2 + b_1x + b_0$ can be commited and evaluated in $\mathbb{G_2}$ with $\tau$ already obscured.
+
+```math
+[b(\tau)]_2 = b_2\Theta_2 + b_1\Theta_1 + b_0G_2
+```
+
+Even for the verifier, without having to ever learn what $\tau$ was, the verifier can use the published $\Omega$ and $\Theta$ terms within bilinear pairings to verify relationships between commited polynomials.
+
+```math
+e([a(\tau)]_1, [b(\tau)]_2) \stackrel{?}{=} e\Bigl((a_2\Omega_2 + a_1\Omega_1 + a_0G_1), \ (b_2\Theta_2 + b_1\Theta_1 + b_0G_2)\Bigr)
+```
+
+The key here is, nobody knows what $\tau$ is, and if we were only given $[\Omega_1, G_1]$ and $[\Theta_1, G_2]$ in the SRS (one of each term instead of two), by the discrete logarithm problem there is no efficient way to recover $\tau$ from $\tau G_1$ or $\tau G_2$. Without knowing $\tau$ it is impossible to compute $\tau^2$ and thus $\tau^2G_1$ or $\tau^2G_2$.
+
+Also remember, that elliptic curve operations only allow point addition: $[a]_1 + [b]_1 = [a + b]_1$, and scalar multiplication (which is repeated addition in itself): $k \cdot [a]_1 = [k \cdot a]_1$. It does not define the multiplication of two elliptic curve points. Thus we cannot compute $[\tau^2]_1$ from $[\tau]_1$ alone.
+
+<hr>
+
