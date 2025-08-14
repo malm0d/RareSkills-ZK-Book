@@ -389,7 +389,24 @@ The prover then publishes: $([A]_1, [B]_2, [C]_1)$, and the verifier can check t
 [A]_1 \bullet [B]_2 \stackrel{?}{=} [C]_1 \bullet G_2
 ```
 
-<hr>
+If the witness $\mathbf{a}$ satisfies the QAP, then the above equation will be balanced. However, the equation being balanced does not necessarily mean that the prover knows a satisfying witness $\mathbf{a}$, because the prover can publish arbitray elliptic curve points and the verifier would not know if those elliptic curve points (or polynomial commitments) are actually derived from the QAP.
+
+The prover is always assumed to be malicious.
+
+## The Proof is Very Small
+
+Observe that the proof only consists of three elliptic curve points: $([A]_1, [B]_2, [C]_1)$.
+
+If each $\mathbb{G_1}$ element is $64$ bytes large, and each $\mathbb{G_2}$ element is $128$ bytes large, then the proof is only $256$ bytes in size. **This is true regardless of the size of the R1CS!**
+
+The larger the R1CS, the more work the prover has; but the verifier's work remains constant.
+
+The solution to this problem is described in the next chaper on the Groth16 protocol.
+
+The proof still remains of constant size in Groth16, as can be seen in the Tornado Cash source code on the [`struct`](https://github.com/tornadocash/tornado-core/blob/master/contracts/Verifier.sol#L167-L171) called `Proof`.
+
+
+## A Quick Note on the Number of Terms in the SRS
 
 Observe that in the structured reference strings, there are two $\Omega$ terms provided and two $\Theta$ terms provided. There is a good reason for this.
 
@@ -416,6 +433,3 @@ e([a(\tau)]_1, [b(\tau)]_2) \stackrel{?}{=} e\Bigl((a_2\Omega_2 + a_1\Omega_1 + 
 The key here is, nobody knows what $\tau$ is, and if we were only given $[\Omega_1, G_1]$ and $[\Theta_1, G_2]$ in the SRS (one of each term instead of two), by the discrete logarithm problem there is no efficient way to recover $\tau$ from $\tau G_1$ or $\tau G_2$. Without knowing $\tau$ it is impossible to compute $\tau^2$ and thus $\tau^2G_1$ or $\tau^2G_2$.
 
 Also remember, that elliptic curve operations only allow point addition: $[a]_1 + [b]_1 = [a + b]_1$, and scalar multiplication (which is repeated addition in itself): $k \cdot [a]_1 = [k \cdot a]_1$. It does not define the multiplication of two elliptic curve points. Thus we cannot compute $[\tau^2]_1$ from $[\tau]_1$ alone.
-
-<hr>
-
