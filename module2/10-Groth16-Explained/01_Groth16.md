@@ -86,4 +86,135 @@ The prover can thus evaluate their QAP on the trusted setup by the following:
 \end{align*}
 ```
 
-The terms $[A]_1$ and $[C]_1$ represent polynomial commitments in $\mathbb{G_1}$, and $[B]_2$ represent a polynomial commitment in $\mathbb{G_2}$. A polynomial commitment simply means that the polynomial has been evaluated 
+The terms $[A]_1$ and $[C]_1$ represent polynomial commitments in $\mathbb{G_1}$, and $[B]_2$ represent a polynomial commitment in $\mathbb{G_2}$. A polynomial commitment simply means that the polynomial has been evaluated at the secret scalar value $\tau$ via the SRS, and the result is hidden in the exponent of a generator and encoded as an elliptic curve point.
+
+The details of the above computations (of polynomial commitments) are discussed in [QAP over elliptic curves](https://rareskills.io/post/elliptic-curve-qap).
+
+If the witness $\mathbf{a}$ is correct, it satisfies the QAP and the following equation will hold true:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [C]_1 \bullet G_2
+```
+
+## Motivation
+From the previous chapter, we left off saying that a prover simply presenting: $([A]_1, [B]_2, [C]_2)$ is not a convincing enough argument to assume that the prover knows a witness $\mathbf{a}$ such that the QAP is balanced.
+
+The prover is always assumed to be malicious.
+
+The prover can simply invent the scalars: $a$, $b$, $c$, where $ab = c$, compute:
+
+```math
+[A]_1 = aG_1 \\
+[B]_2 = bG_2 \\
+[C]_1 = cG_1
+```
+
+and present them as elliptic curve points to the verifier.
+
+The verifier will have no idea if $([A]_1, [B]_2, [C]_2)$ were the result of a satisified QAP or not.
+
+We need to force the prover to be honest without introducing too much computational overhead. The first algorithm to accomplish this was ["Pinocchio: Nearly Practical Verifiable Computation"](https://eprint.iacr.org/2013/279.pdf). This was usable enough for ZCash to base the first version of their blockchain on it.
+
+However, Groth16 was able to accomplish the same thing with much fewer steps, and the algorithm is still widely used today as no other algorithm since has produced as efficient an algorithm for the verification step (though other algorithms have eliminated the trusted setup or significantly reduced the amount of work for the prover).
+
+Update for 2024: A paper rather triumphantly titled [“Polymath: Groth16 is not the limit”](https://eprint.iacr.org/2024/916) published in Cryptology demonstrates an algorithm that requires fewer verifier steps than Groth16. However, there are no known implementations of the algorithm at this time of writing.
+
+## Preventing Forgery Part 1: Intoducing $\alpha$ and $\beta$
+### An "Unsolvable" Verification Formula
+
+Suppose we update our verification formula from:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [C]_2 \bullet G_2
+```
+
+to the following:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [D]_{1 \ 2} + [C]_1 \bullet G_2
+```
+
+**Note that the above is using additive notation for the $\mathbb{G_{1 \ 2}}$ group for convenience.**
+
+Here, $[D]_{1 \ 2}$ is an element from $\mathbb{G_{1 \ 2}}$ and has an **unknown** discrete logarithm.
+
+We now show that it is impossible for a verifier to provide a solution $([A]_1, [B]_2, [C]_1)$ to this equation without knowing the discrete logarithm of $[D]_{1 \ 2}$.
+
+<hr>
+
+#### Side Quest: Why Additive Notation over Multiplicative Notation
+
+In the context of bilinear pairings, the target group $\mathbb{G_{1 \ 2}}$ is usually written multiplicatively.
+
+In pairings, we have:
+
+```math
+e: G_1 \times G_2 \rightarrow G_{1 \ 2}
+```
+
+The pairing property is:
+
+```math
+e(aG_1, bG_2) = e(G_1, G_2)^{ab}
+```
+
+And the group law in $\mathbb{G_{1 \ 2}}$ is multiplication. (Remember that the LHS reflects additive group operations - scalar mulitplies of EC points), and the RHS reflects an element of a group where exponentiation makes sense i.e. a multiplicative group.
+
+Switiching to additive notation is simply for convenience in writing the verification equation. Instead of $X \cdot Y$ meaning group multiplciation in $\mathbb{G_{1 \ 2}}$, we write $X + Y$ to mean the group operation. That is, $+$ is now the group law.
+
+It is sensible to do this because the rest of the equation involves $\mathbb{G_1}$ and $\mathbb{G_2}$ elements in additive notation.
+
+The updated verification equation that we have above would normally be written in multiplicative notation as:
+
+```math
+e([A]_1, [B]_2) \stackrel{?}{=} [D]_{1 \ 2} \cdot e([C]_1, G_2)
+```
+
+Observe that the "$+$" (group addition) in the original equation in additive notation is replaced with "$\cdot$" (group multiplication) in the multiplicatibe notation for $G_{1 \ 2}$. Scalars still multiply points in their respective groups: $[C]_1 \bullet G_2$ still means pairing $[C]_1$ with $G_2$.
+
+Remember that elliptic curve math is always additive:
+
+```math
+P + Q, \quad a \cdot P
+```
+
+Staying with the additive notation keeps things consistent - we dont want the verification equation to be mixed with addition and multiplication symbols. Additionally, all groups: $G_1$, $G_2$, and $G_{1 \ 2}$ are abelian, and having just "$+$" just means the group law for whatever group they are in.
+
+Most importantly, there is no loss of correctness. The math is identical - we can pick additive or multiplicative notation for any abelian group, including $G_{1 \ 2}$. If we write the group's binary operator as "$+$", then the identity is $0$, and inverses are $-x$; if we write the group's binary operator as "$\cdot$, then the identiy is $1$, and the inverses are $x^{-1}$. No matter which of the two binary operators we select, the underlying algebraic structure remains the same.
+
+Normally, the convention is: elliptic curve groups $\rightarrow$ additive, and field multiplicative subgroup $\rightarrow$ multiplicative. Here, we align with $G_1$ and $G_2$ elliptic curve groups simply for readability, thus the additive notation.
+
+<hr>
+
+## Attack 1: Forging $[A]_1$ and $[B]_2$, and Attempting to Derive $[C]_1$
+
+Suppose that a malicious prover randomly selects the scalars: $a'$ and $b'$, and produces the elliptic curve points: $[A]_1$ and $[B]_2$. The malicious prover then attempts to derive (forge) a $[C']_1$ that is compatible with the verifier's formula (i.e. makes the equation true). If the prover knew the discrete logs for $[A]_1$ and $[B]_2$ with respect to the know generators $G_1$ and $G_2$, then they could explicitly compute $[A]_1 \bullet [B]_2$.
+
+Starting from:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [D]_{1 \ 2} + [C']_1 \bullet G_2
+```
+
+Subtract $[D]_{1 \ 2}$ from both sides (remember that "subtract" means inverse/addition in $\mathbb{G_{1 \ 2}}$)
+
+```math
+\begin{align*}
+[A]_1 \bullet [B]_2 - [D]_{1 \ 2} &\stackrel{?}{=} [C']_1 \bullet G_2 \quad \text{(additive notation)}  \\[4pt]
+e([A]_1, [B]_2) \cdot [D]_{1 \ 2}^{\ -1} &\stackrel{?}{=} e([C]_1, G_2) \quad \text{(multiplicative notation)}
+\end{align*}
+```
+
+The LHS could be called: $[\chi]_{1 \ 2} = [A]_1 \bullet [B]_2 - [D]_{1 \ 2}$, and the above rewritten as:
+
+```math
+[\chi]_{1 \ 2} \stackrel{?}{=} [C']_1 \bullet G_2
+```
+
+To solve for $[C']_1$, a malicious prover could try to find the discrete logarithm of $\chi_{1 \ 2}$. But we know that this is not computationally feasible.
+
+The malicious prover, assuming if they knew what $[\chi]_{1 \ 2}$ is, could also atttempt to solve for $[C']_1$ by finding the scalar $C'$ that satisfies the above. But this is the same as attempting to solve the discrete logarithm problem which is, again, computationally infeasible.
+
+## Attack 2: Forging $[C]_1$, and Attempting to Derive $[A]_1$ and $[B]_2$ (A Bilinear Diffie-Hellman Problem)
+
+
