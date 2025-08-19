@@ -217,4 +217,50 @@ The malicious prover, assuming if they knew what $[\chi]_{1 \ 2}$ is, could also
 
 ## Attack 2: Forging $[C]_1$, and Attempting to Derive $[A]_1$ and $[B]_2$ (A Bilinear Diffie-Hellman Problem)
 
+Suppose that a malicious prover randomly selects the scalar $c'$ and produces the elliiptic curve point $[C]_1$. This means that the malicious prover could explicitly compute $[C]_1 \bullet G_2$.
 
+Since the prover already knows $c'$, they could attempt to find the scalars: $a'$ and $b'$ such that:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} \underbrace{[D]_{1 \ 2} + [C]_1 \bullet G_2}_{[\zeta]_{1 \ 2}}
+\\[4pt]
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [\zeta]_{1 \ 2}
+```
+
+This requires the prover, given $[\zeta]_{1 \ 2}$, to come up with an $[A]_1$ and $[B]_2$ that produces $[\zeta]_{1 \ 2}$ in a bilinear pairing. That is, the prover has to figure out what the scalars $a'$ and $b'$ are.
+
+Similar to the discrete logarith problem, we rely on unproven cyptographic assumptions that this computation: decomposing (breaking down) an element in $\mathbb{G_{1 \ 2}}$ into its respective $\mathbb{G_1}$ and $\mathbb{G_2}$ elements, is computationally infeasible.
+
+In this case, the assumption that we cannot decompose $[\zeta]_{1 \ 2}$ into $[A]_1$ and $[B]_2$ is called the *Bilinear Diffie-Hellman Assumption*. You may optionally read up on the [Decisional Diffie-Hellman Assumption](https://en.wikipedia.org/wiki/Decisional_Diffie%E2%80%93Hellman_assumption).
+
+In practice, there is no known way to decompose $[\zeta]_{1 \ 2}$ into $[A]_1$ and $[B]_2$, and it is believed to be computationally infeasible.
+
+<hr>
+
+#### Side Quest: Exploring BDH and DDH
+
+The Bilinear Diffie-Hellman (BDH) Assumption states that given the elliptic curve generators $P \in \mathbb{G_1}, Q \in \mathbb{G_2}$, and the scalars: $a, b, c$ which are **hidden** from you, it is computationally hard to compute: $e(P, Q)^{abc} \in \mathbb{G_{1 \ 2}}$. 
+
+Formally, given the inputs: $P, aP, bP \in \mathbb{G_1}, Q, cQ \in \mathbb{G_2}$. And given the output: $e(P, Q)^{abc} \in \mathbb{G_{1 \ 2}}$. No efficient algorithm can solve this with non-negligible probability. There is no feasible way of knowing the scalars $a, b, c$ such that we can combine the exponents in the bilinear pairing to get the output - all we have are just elliptic curve points.
+
+Finding the inverse of this pairing $e(P, Q)^{abc}$ would mean finding the hidden scalars, but this is essentially the discrete logarithm problem on elliptic curves.
+
+In the same way, the Decisional Diffie-Hellman (DDH) Assumption also relies on the hardness of the discrete logarithm problem.
+
+Consider a multiplicative cyclic group $\mathbb{G}$ with the order $q$ and the generator $g$. The DDH assumption states that given $g^a$ and $g^b$ for $a, b, \in \mathbb{Z_q}$, then it is hard to decide if $ab = a \times b$ because $g^{ab}$ looks like any other element in  $\mathbb{G}$.
+
+Another way to look at this, if we have $(g^a, g^b, \mathbb{z})$ in $\mathbb{G}$, its hard to decide if $\mathbb{z} = g^{ab}$. This is a decisional problem, not a computational problem where we have to compute $g^{ab}$, we are just being asked if $\mathbb{z}$ is equal to $g^{ab}$ or not. If breaking the discrete logarithm is easy, then we could compute: $a = \log_{g}(g^a)$, and once we have $a$, we can then compute: $(g^b)^a = g^{ab}$. And we can then compare this with $\mathbb{z}$ to answer if $z = g^{ab}$.
+
+We know that breaking the discrete logarithm problem is infeasible and therefore DDH assumes that $g^a$, $g^b$ and $g^{ab}$ are computationally indistinguishable.
+
+<hr>
+
+## Scalars $\alpha$ and $\beta$: How they are used in Groth16
+
+So far, we have the verification equation:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [D]_{1 \ 2} + [C]_1 \bullet G_2
+```
+
+In practice, Groth16 does not use the term $[D]_{1 \ 2}$. Instead, the trusted setup generates two random scalars: $\alpha$ and $\beta$, and publishes in the SRS the elliptic curve points: $[\alpha]_1$ and $[\beta]_2$.
