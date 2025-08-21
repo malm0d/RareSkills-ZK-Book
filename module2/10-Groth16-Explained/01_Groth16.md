@@ -263,4 +263,169 @@ So far, we have the verification equation:
 [A]_1 \bullet [B]_2 \stackrel{?}{=} [D]_{1 \ 2} + [C]_1 \bullet G_2
 ```
 
-In practice, Groth16 does not use the term $[D]_{1 \ 2}$. Instead, the trusted setup generates two random scalars: $\alpha$ and $\beta$, and publishes in the SRS the elliptic curve points: $[\alpha]_1$ and $[\beta]_2$.
+In practice, Groth16 doesn't use the term $[D]_{1 \ 2}$. Instead, the trusted setup generates two random scalars: $\alpha$ and $\beta$, and publishes in the structured reference string (SRS) the elliptic curve points: $[\alpha]_1$ and $[\beta]_2$ - which are computed as:
+
+```math
+\begin{align*}
+[\alpha]_1 &= \alpha G_1 \\
+[\beta]_2 &= \beta G_2
+\end{align*}
+```
+
+What we refer to as $[D]_{1 \ 2}$ is simply the pairing: $[\alpha]_1 \bullet [\beta]_2$. And our updated verification formula is:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [C]_1 \bullet G_2
+```
+
+### Re-deriving the Proving and Verification Formulas
+
+To make the now updated verification formula "solvable", the QAP formula must be updated to incorporate $\alpha$ and $\beta$. That is, since we added $[\alpha]_1 \bullet [\beta]_2$ to the RHS of the equation, we need to balance it by adding $[\alpha]_1$ and $[\beta]_2$ to the LHS of the equation.
+
+The original QAP formula is:
+
+```math
+\sum_{i = 1}^{m}a_iu_i(x) \sum_{i = 1}^{m}a_iv_i(x) = \sum_{i = 1}^{m}a_iw_i(x) + h(x)t(x)
+```
+
+Consider what happens if we add $\theta$ and $\eta$ to the sum terms on the LHS of the equation respectively:
+
+```math
+(\boxed{\theta} + \sum_{i=1}^{m}a_iu_i(x)) (\boxed{\eta} + \sum_{i=1}^{m}a_iv_i(x))
+```
+
+When we expand the above, we get:
+
+```math
+\boxed{\theta\eta} + \boxed{\theta}\sum_{i=1}^{m}a_iv_i(x) + \boxed{\eta}\sum_{i=1}^{m}a_iu_i(x) + \sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)
+```
+
+Notice that the rightmost term is essentially the original QAP expression. We can substitute that term using the QAP definition:
+
+```math
+\begin{align*}
+\theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) \ + \ &\boxed{\sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}
+\\
+&\text{becomes}
+\\
+\theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) \ + \ &\boxed{\sum_{i=1}^{m}a_iw_i(x) + h(x)t(x)} 
+\end{align*}
+```
+
+Now, we get an "expanded" QAP with the following definition:
+
+```math
+(\theta + \sum_{i=1}^{m}a_iu_i(x))(\eta + \sum_{i=1}^{m}a_iv_i(x)) = \theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) + \sum_{i=1}^{m}a_iw_i(x) + h(x)t(x)
+```
+
+If we replace $\theta$ with $[\alpha]_1$, and $\eta$ with $[\beta]_2$, we will arrive at the updated verification formula:
+
+```math
+[A]_1 \bullet [B]_2 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [C]_1 \bullet G_2
+```
+
+Where:
+
+```math
+\underbrace{([\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau))}_{[A]_1} \underbrace{([\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau))}_{[B]_2} = [\alpha]_1 \bullet [\beta]_2 + \underbrace{(\alpha\sum_{i=1}^{m}a_iv_i(\tau) + \beta\sum_{i=1}^{m}a_iu_i(\tau) + \sum_{i=1}^{m}a_iw_i(\tau) + h(\tau)t(\tau))}_{[C]_1} \bullet G_2
+```
+
+(FYI: in $[C]_1$, we don't do $[\alpha]_1 \sum a_if_i(\tau)$ because that would incorrectly multiply an elliptic curve group element with a scalar "in the wrong space". The only valid way to turn a scalar into a group element is to multiply it by the elliptic curve's generator point. That is: $\alpha\sum_{i=1}^{m}a_iv_i(\tau)$ and its counterparts in the $[C]_1$ block are scalars in $\mathbb{F_p}$, which are evaluated first, added together, and only then multiplied with the generator point $G_1$ (through the powers of $\tau$ in the SRS) to become a commitment in $\mathbb{G_1}$.)
+
+At this point, the prover could compute $[A]_1$ and $[B]_2$ without knowing the actual values of $\tau$, $\alpha$, or $\beta$. Given that the SRS includes powers of $\tau$ encoded as elliptic curve points (e.g. $\Omega_i = \tau^iG_1$) and the elliptic curve points ($[\alpha]_1$, $[\beta]_2$), the prover would compute $[A]_1$ and $[B]_2$ as:
+
+```math
+\begin{align*}
+[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau)
+\\
+[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau)
+\end{align*}
+```
+
+Again, we stress that writing $a_iu_i(\tau)$ does mean that the prover knows $\tau$. It would have been discarded after the trusted setup. The prover is using the $\mathbb{G_1}$ SRS: $[\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^2G_1, \tau G_1, G_1]$ to compute $u_i(\tau)$ for $i = 1, 2, \dots, m$ for $[A]_1$, and the $\mathbb{G_2}$ SRS: $[\tau^{n-1}G_2, \tau^{n-2}G_2, \dots, \tau^2G_2, \tau G_2, G_2]$ to compute $v_i(\tau)$ for $i = 1, 2, \dots, m$ for $[B]_2$.
+
+HOWEVER, as you may have noticed, since the values of the scalars $\alpha$ and $\beta$ are unknown, it is currently impossible for the prover to compute $[C]_1$. 
+
+Since the prover has $[\alpha]_1$ and $\sum_{i=1}^{m}a_iu_i(\tau)$, a naive thought would be that a bilinear pairing function can be used to "fake" the value of $\alpha$. That is, they might attempt to do something like: $(e(G_1, G_2)^{\alpha})^{\sum_{i=1}^{m}a_iu_i(\tau)} = e(G_1, G_2)^{\alpha\sum_{i=1}^{m}a_iv_i(\tau)}$, making it seem they have the right value. The problem here is, $e(G_1, G_2)^{\alpha\sum_{i=1}^{m}a_iv_i(\tau)}$ lies in the $\mathbb{G_{1 \ 2}}$ target group. 
+
+Remember, the prover needs a $\mathbb{G_1}$ point for $[C]_1$ (it has to be a commitment in $\mathbb{G_1}$). As such, the prover cannot pair $[\alpha]_1$ with $\sum a_iu_i(\tau)$, and $[\beta]_2$ with $\sum a_iv_i(\tau)$ because those will just create $\mathbb{G_{1 \ 2}}$ points.
+
+### Adjusting the Trusted Setup
+
+Instead, the trusted setup needs to precompute $m$ polynomials for the $\sum$ terms in the problematic $C$ term of the expanded QAP. 
+
+```math
+\alpha\sum_{i=1}^{m}a_iv_i(\tau) + \beta\sum_{i=1}^{m}a_iu_i(\tau) + \sum_{i=1}^{m}a_iw_i(\tau)
+```
+
+Note here that there is a distinction between $C$ and $[C]_1$. Writing $C$ means that we still manipulating the polynomials evaluated at $\tau$. It is only when the scalars in $C$ are exponentiated onto a elliptic curve then we call the result $[C]_1$.
+
+With some algebraic manipulation, we can combine the sum terms into a single sum:
+
+```math
+= \sum_{i=1}^{m}(\alpha a_iv_i(\tau) + \beta a_iu_i(\tau) + a_iw_i(\tau))
+```
+
+And then factor out $a_i$:
+
+```math
+= \sum_{i=1}^{m}a_i\boxed{(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))}
+```
+
+From here, the trusted setup can create $m$ linear combinations of polynomials evaluated at $\tau$ from the boxed term above. The prover can then use those evaluated polynomials - which would be scalars committed to the elliptic curve group $\mathbb{G_1}$, to compute the sum. The exact details are shown in the next section.
+
+## Trusted Setup Steps
+
+Concretely, the trusted setup computes the following:
+
+```math
+\begin{align*}
+\tau, \alpha, \beta &\leftarrow \text{random secret scalars}
+\\[1pt]
+[\alpha]_1 &\leftarrow \text{$\alpha$ commited in $\mathbb{G_1}$}
+\\[1pt]
+[\beta]_2 &\leftarrow \text{$\alpha$ commited in $\mathbb{G_2}$}
+\\[1pt]
+[\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^{2}G_1, \tau G_1, G_1] &\leftarrow \text{srs for $\mathbb{G_1}$ ($\Omega_i$ terms)}
+\\[1pt]
+[\tau^{n-1}G_2, \tau^{n-2}G_2, \dots, \tau^{2}G_2, \tau G_2, G_2] &\leftarrow \text{srs for $\mathbb{G_2}$ ($\Theta_i$ terms)}
+\\[1pt]
+[\tau^{n-2}t(\tau)G_1, \tau^{n-3}t(\tau)G_1, \dots, \tau^{2}t(\tau)G_1, \tau t(\tau)G_1, t(\tau)G_1] &\leftarrow \text{srs for $h(x)t(x)$ in $\mathbb{G_1}$ ($\Upsilon_i$ terms)}
+\\[1pt]
+[\Psi_1]_1 &\leftarrow \text{for $(\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau))G_1$}
+\\[1pt]
+[\Psi_2]_1 &\leftarrow \text{for $(\alpha v_2(\tau) + \beta u_2(\tau) + w_2(\tau))G_1$}
+\\[1pt]
+\vdots
+\\[1pt]
+[\Psi_m]_1 &\leftarrow \text{for $(\alpha v_m(\tau) + \beta u_m(\tau) + w_m(\tau))G_1$}
+\end{align*}
+```
+
+We introduce the notation $[\Psi_i]_1$ to denote the $i$-th precomputed group element in $\mathbb{G_1}$ corrresponding to the linear combination of polynomials in $C$ evaluated at $\tau$ and commited in $\mathbb{G_1}$: $(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))G_1$; which the trusted setup provides to allow the generation of the $[C]_1$ term.
+
+The trusted setup thus publishes:
+
+```math
+([\alpha]_1, [\beta]_2, \text{srs}_{\mathbb{G_1}}, \text{srs}_{\mathbb{G_2}}, \text{srs}_{h(x)t(x)}, [\Psi_1]_1, [\Psi_2]_1, \dots, [\Psi_m]_1)
+```
+
+## Prover Steps
+
+Before, the $[C]_1$ term would have been:
+
+```math
+[C]_1 = \sum_{i=1}^{m}a_i\boxed{(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))} + h(\tau)t(\tau)
+```
+
+Which contains the secret scalars $\alpha$ and $\beta$, and would hence be impossible for the prover to compute. With the new $[\Psi_i]_1$ terms provided in the trusted setup, the prover can now compute:
+
+```math
+\begin{align*}
+[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau)
+\\
+[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau)
+\\
+[C]_1 &= \sum_{i=1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau)
+\end{align*}
+```
