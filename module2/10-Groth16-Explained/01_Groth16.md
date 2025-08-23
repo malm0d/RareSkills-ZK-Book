@@ -119,7 +119,7 @@ However, Groth16 was able to accomplish the same thing with much fewer steps, an
 
 Update for 2024: A paper rather triumphantly titled [“Polymath: Groth16 is not the limit”](https://eprint.iacr.org/2024/916) published in Cryptology demonstrates an algorithm that requires fewer verifier steps than Groth16. However, there are no known implementations of the algorithm at this time of writing.
 
-## Preventing Forgery Part 1: Intoducing $\alpha$ and $\beta$
+## Part 1: Preventing Forgery - Intoducing $\alpha$ and $\beta$
 ### An "Unsolvable" Verification Formula
 
 Suppose we update our verification formula from:
@@ -429,3 +429,161 @@ Which contains the secret scalars $\alpha$ and $\beta$, and would hence be impos
 [C]_1 &= \sum_{i=1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau)
 \end{align*}
 ```
+
+## Verifier Steps
+
+The verifier computes:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [C]_1 \bullet G_2
+```
+
+## Supporting Public Inputs
+
+In Groth16, some parts of the witness $\mathbf{a}$ must be public inputs for the verifier to check. The witness is all variables that satisfy the constraint system in Groth16 - this is the private data that the prover knows. The public input is part of the computation that everyone can know, for instance, the merkle root stored in a smart contract which everyone can use to verify information.
+
+Groth16 lets us prove: "I know a witness $\mathbf{a}$ such that $(\text{some public input}, a)$ satisfies the circuit."
+
+If the witness is completely private - that is the verifier does not see any part of it, then the statement that's being proved would be trivial. A prover could claim that they know the witness that satisfies a circuit, but if the verifier has no idea what the circuit is being evaluated on, then the claim is meaningless. The public inputs serve to anchor the proof to a specific claim.
+
+So far, the verifier formula does not support public inputs - i.e. making a portion of the witness public.
+
+By convention, the public portions of the witness are usually **the first $\ell$ elements of the witness vector $\mathbf{a}$**. To make those elements public, the prover simply reveals them:
+
+```math
+[a_1, a_2, \dots, a_{\ell}]
+```
+
+For the verifier to test that the values in the witness $\mathbf{a}$ were actually used, the verifier must carry out some of the computation that the prover was originally (supposed to be) doing.
+
+**Now, the prover specifically computes:**
+
+```math
+\begin{align*}
+[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau)
+\\
+[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau)
+\\
+[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau)
+\end{align*}
+```
+
+Notice that only the computation of $[C]_1$ changed. Now, the prover computes $[C]_1$ with $a_i$ and $[\Psi_i]_1$ **starting from terms $\ell + 1$ to $m$, that is, from $i = \ell + 1, \dots, m$.**
+
+Then the verifier computes $[X]_1$, which is **the first $\ell$ terms of that sum term in $[C]_1$**:
+
+```math
+[X]_1 = \sum_{i=1}^{\ell}a_i[\Psi_i]_1
+```
+
+And the verification equation is now:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [X]_1 \bullet G_2 + [C]_1 \bullet G_2
+```
+
+<hr>
+
+#### Side Quest: Mathematically, how does $[X]_1 \bullet G_2$ and $[C]_1 \bullet G_2$ add up?
+
+We had split the original sum term in $[C]_1$ into the following:
+
+```math
+\sum_{i=1}^{m}a_i[\Psi_i]_1 = \underbrace{\sum_{i=1}^{\ell}a_i[\Psi_i]_1}_{\text{public part, as $[X]_1$}} + \underbrace{\sum_{i = \ \ell+1}^{m}a_i[\Psi_i]_1}_{\text{private part, kept as $[C]_1$}}
+```
+
+This is the same as saying: $[X]_1 + [C]_1 \in \mathbb{G_1}$.
+
+In the new verification equation, we can simply add $[X]_1 \bullet G_2$ to $[C]_1 \bullet G_2$ because algebraically, we are reconstructing the same bilinear pairing we had before splitting. 
+
+That is, if we feed $[X]_1$ and $[C]_1$ into a pairing, we get:
+
+```math
+e([X]_1 + [C]_1, G_2)
+```
+
+The bilinearity of the pairing allows us to split the sum and then recombine the results by multiplying (or "adding" in additive notation) in the target group. That is, the group law in the source group ($+$) corresponds to multiplication in the target group ($\cdot$).
+
+This means, for $P, P' \in \mathbb{G_1}$ and $Q \in \mathbb{G_2}$:
+
+```math
+\begin{align*}
+e(P + P', Q) &= e(P, Q) \cdot e(P', Q) \quad \text{(multiplicative notation)} \\
+&= e(P, Q) + e(P', Q) \quad \text{(additive notation)}
+\end{align*}
+```
+
+Thus by bilinearity:
+
+```math
+\begin{align*}
+e([X]_1 + [C]_1, G_2) &= e([X]_1, G_2) \cdot e([C]_1, G_2) \\
+&= e([X]_1, G_2) + e([C]_1, G_2)
+\end{align*}
+```
+
+And this matches what we see:
+
+```math
+[X]_1 \bullet G_2 + [C]_1 \bullet G_2
+```
+
+To be more explicit about the above:
+
+```math
+\begin{align*}
+[C]_1 \bullet G_2 &= e \biggl(\sum_{i=1}^{m}a_i[\Psi_i]_1, G_2 \biggr) 
+\\[12pt]
+&= e \biggl(\sum_{i=1}^{\ell}a_i[\Psi_i]_1 + \sum_{i = \ \ell+1}^{m}a_i[\Psi_i]_1, G_2 \biggr)
+\\[12pt]
+&= e \biggl(\sum_{i=1}^{\ell}a_i[\Psi_i]_1, G_2 \biggr) + e \biggl(\sum_{i = \ \ell+1}^{m}a_i[\Psi_i]_1, G_2 \biggr)
+\\[16pt]
+&= [X]_1 \bullet G_2 + [C]_1 \bullet G_2
+\end{align*}
+```
+
+<hr>
+
+## Part 2: Separating the Public Inputs from the Private Inputs with $\gamma$ and/or $\delta$
+
+### Forging proofs by misusing $\Psi_i$ for $i \le \ell$
+
+The assumption in the verification equation:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [X]_1 \bullet G_2 + [C]_1 \bullet G_2
+```
+
+Is that the prover is only using $\Psi_{\ell + 1}$ to $\Psi_m$ to compute $[C]_1$. However this does not stop a dishonest prover from using $\Psi_1$ to $\Psi_{\ell}$ to compute $[C]_1$, leading to a forged proof.
+
+For example, we expand $[X]_1$ and $[C]_1$ under the hood:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + \underbrace{\sum_{i=1}^{\ell}a_i[\Psi_i]_1}_{[X]_1} \bullet G_2 + \underbrace{(\sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau))}_{[C]_1} \bullet G_2
+```
+
+Suppose, and without loss of generality that:
+
+```math
+\begin{align*}
+\mathbf{a} &= [1, 2, 3, 4, 5] \\
+\ell &= 3
+\end{align*}
+```
+
+This means that the public part of the witness is $[1, 2, 3]$ and the private part of the witness is $[4, 5]$.
+
+The final verification equation would be as follows:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + \underbrace{(1\Psi_1 + 2\Psi_2 + 3\Psi_3)}_{[X]_1} \bullet G_2 + \underbrace{(4\Psi_4 + 5\Psi_5)}_{[C]_1} \bullet G_2
+```
+
+Nothing stops a dishonest prover from creating the public part of the witness as $[1, 2, 0]$ instead of $[1, 2, 3]$, and moving the zero-ed out portion of the public part into the private part of the witness, i.e. the private part would be $[3, 4, 5]$ instead of $[4, 5]$.
+
+The computation would then be:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + \underbrace{(1\Psi_1 + 2\Psi_2 + \boxed{0\Psi_3})}_{[X]_1} \bullet G_2 + \underbrace{(\boxed{3\Psi_3} + 4\Psi_4 + 5\Psi_5)}_{[C]_1} \bullet G_2
+```
+
