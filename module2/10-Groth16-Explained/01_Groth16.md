@@ -594,3 +594,8 @@ The equation above is valid since adding $[X]_1$ and $[C]_1$ still produces: $(1
 Therefore, we need to prevent the prover from using $\Psi_1$ to $\Psi_{\ell}$ (in whole or in part) as part of their computation of $[C]_1$.
 
 ### Introducing $\gamma$ and/or $\delta$
+
+To avoid the problem with having a dishonest prover using $\Psi_1$ to $\Psi_{\ell}$, the trusted setup introduces a **new scalar: $\gamma$ and(or) $\delta$**, to force $\Psi_{\ell + 1}$ to $\Psi_m$ to be separate from $\Psi_1$ to $\Psi_{\ell}$. 
+
+**To do this, the tusted setup divides (multiplies by the [modular inverse](https://rareskills.io/post/finite-fields#multiplicative-inverse))**:
+- The
