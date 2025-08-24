@@ -186,7 +186,7 @@ Normally, the convention is: elliptic curve groups $\rightarrow$ additive, and f
 
 <hr>
 
-## Attack 1: Forging $[A]_1$ and $[B]_2$, and Attempting to Derive $[C]_1$
+### Attack 1: Forging $[A]_1$ and $[B]_2$, and Attempting to Derive $[C]_1$
 
 Suppose that a malicious prover randomly selects the scalars: $a'$ and $b'$, and produces the elliptic curve points: $[A]_1$ and $[B]_2$. The malicious prover then attempts to derive (forge) a $[C']_1$ that is compatible with the verifier's formula (i.e. makes the equation true). If the prover knew the discrete logs for $[A]_1$ and $[B]_2$ with respect to the know generators $G_1$ and $G_2$, then they could explicitly compute $[A]_1 \bullet [B]_2$.
 
@@ -215,7 +215,7 @@ To solve for $[C']_1$, a malicious prover could try to find the discrete logarit
 
 The malicious prover, assuming if they knew what $[\chi]_{1 \ 2}$ is, could also atttempt to solve for $[C']_1$ by finding the scalar $C'$ that satisfies the above. But this is the same as attempting to solve the discrete logarithm problem which is, again, computationally infeasible.
 
-## Attack 2: Forging $[C]_1$, and Attempting to Derive $[A]_1$ and $[B]_2$ (A Bilinear Diffie-Hellman Problem)
+### Attack 2: Forging $[C]_1$, and Attempting to Derive $[A]_1$ and $[B]_2$ (A Bilinear Diffie-Hellman Problem)
 
 Suppose that a malicious prover randomly selects the scalar $c'$ and produces the elliiptic curve point $[C]_1$. This means that the malicious prover could explicitly compute $[C]_1 \bullet G_2$.
 
@@ -255,7 +255,7 @@ We know that breaking the discrete logarithm problem is infeasible and therefore
 
 <hr>
 
-## Scalars $\alpha$ and $\beta$: How they are used in Groth16
+### Scalars $\alpha$ and $\beta$: How they are used in Groth16
 
 So far, we have the verification equation:
 
@@ -330,7 +330,7 @@ Where:
 \underbrace{([\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau))}_{[A]_1} \underbrace{([\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau))}_{[B]_2} = [\alpha]_1 \bullet [\beta]_2 + \underbrace{(\alpha\sum_{i=1}^{m}a_iv_i(\tau) + \beta\sum_{i=1}^{m}a_iu_i(\tau) + \sum_{i=1}^{m}a_iw_i(\tau) + h(\tau)t(\tau))}_{[C]_1} \bullet G_2
 ```
 
-(FYI: in $[C]_1$, we don't do $[\alpha]_1 \sum a_if_i(\tau)$ because that would incorrectly multiply an elliptic curve group element with a scalar "in the wrong space". The only valid way to turn a scalar into a group element is to multiply it by the elliptic curve's generator point. That is: $\alpha\sum_{i=1}^{m}a_iv_i(\tau)$ and its counterparts in the $[C]_1$ block are scalars in $\mathbb{F_p}$, which are evaluated first, added together, and only then multiplied with the generator point $G_1$ (through the powers of $\tau$ in the SRS) to become a commitment in $\mathbb{G_1}$.)
+**[** FYI: in $[C]_1$, we don't do $[\alpha]_1 \sum a_if_i(\tau)$ because that would incorrectly multiply an elliptic curve group element with a scalar "in the wrong space". The only valid way to turn a scalar into a group element is to multiply it by the elliptic curve's generator point. That is: $\alpha\sum_{i=1}^{m}a_iv_i(\tau)$ and its counterparts in the $[C]_1$ block are scalars in $\mathbb{F_p}$, which are evaluated first, added together, and only then multiplied with the generator point $G_1$ (through the powers of $\tau$ in the SRS) to become a commitment in $\mathbb{G_1}$. **]**
 
 At this point, the prover could compute $[A]_1$ and $[B]_2$ without knowing the actual values of $\tau$, $\alpha$, or $\beta$. Given that the SRS includes powers of $\tau$ encoded as elliptic curve points (e.g. $\Omega_i = \tau^iG_1$) and the elliptic curve points ($[\alpha]_1$, $[\beta]_2$), the prover would compute $[A]_1$ and $[B]_2$ as:
 
@@ -581,9 +581,16 @@ The final verification equation would be as follows:
 
 Nothing stops a dishonest prover from creating the public part of the witness as $[1, 2, 0]$ instead of $[1, 2, 3]$, and moving the zero-ed out portion of the public part into the private part of the witness, i.e. the private part would be $[3, 4, 5]$ instead of $[4, 5]$.
 
-The computation would then be:
+As such, the dishonest prover's computation of $[C]_1$ then uses $\Psi_{\ell}$:
 
 ```math
 [A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + \underbrace{(1\Psi_1 + 2\Psi_2 + \boxed{0\Psi_3})}_{[X]_1} \bullet G_2 + \underbrace{(\boxed{3\Psi_3} + 4\Psi_4 + 5\Psi_5)}_{[C]_1} \bullet G_2
 ```
 
+The equation above is valid since adding $[X]_1$ and $[C]_1$ still produces: $(1\Psi_1 + 2\Psi_2 + 3\Psi_3 + 4\Psi_4 + 5\Psi_5) \bullet G_2$, and the pairing check would pass; but the witness does not necessarily satisfy the original constraints.
+
+**[** A verifier expects to check a proof about public inputs $[1, 2, 3]$, but in reality, the prover provided a proof about public inputs $[1, 2, 0]$. Passing the pairing check in this instance would mean that the verifier is convinced of the wrong statement. That is, the verifier believes the proof is about the statement with public inputs $[1, 2, 3]$, but the proof given is actually consistent with the statement with public inputs $[1, 2, 0]$, thereby believing a false claim. The value $3$, which should have been known to the verifier, was shifted into the private part of the witness where the verifier has no visibility. The prover has forged a valid-looking proof for a false statement, or in other words, generated a proof that verifies correctly but does not correspond to the claimed public inputs. **]**
+
+Therefore, we need to prevent the prover from using $\Psi_1$ to $\Psi_{\ell}$ (in whole or in part) as part of their computation of $[C]_1$.
+
+### Introducing $\gamma$ and/or $\delta$
