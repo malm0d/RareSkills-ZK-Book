@@ -629,7 +629,7 @@ The **updated trusted setup supporting public inputs** is now the following:
 \\[4pt]
 [\frac{\tau^{n-2}t(\tau)G_1}{\delta}, \frac{\tau^{n-3}t(\tau)G_1}{\delta}, \dots, \frac{\tau^{2}t(\tau)G_1}{\delta}, \frac{\tau t(\tau)G_1}{\delta}, \frac{t(\tau)G_1}{\delta}] &\leftarrow \text{srs for } h(x)t(x) \text{ in } \mathbb{G_1} \ (\Upsilon_i \ \text{terms})
 \\[12pt]
-&\boxed{\text{for public portion of the witness: } [X]_1 \ (\text{scaled by } 1/\gamma)}
+&\boxed{\text{for public portion of the witness: } [X]_1 \ (\text{scaled by } \frac{1}{\gamma})}
 \\[12pt]
 [\Psi_1]_1 &= \frac{\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau)G_1}{\gamma}
 \\[8pt]
@@ -639,7 +639,7 @@ The **updated trusted setup supporting public inputs** is now the following:
 \\[1pt]
 [\Psi_{\ell}]_1 &= \frac{\alpha v_{\ell}(\tau) + \beta u_{\ell}(\tau) + w_{\ell}(\tau)G_1}{\gamma}
 \\[12pt]
-&\boxed{\text{for private portion of the witness: } [C]_1 \ (\text{scaled by } 1/\delta)}
+&\boxed{\text{for private portion of the witness: } [C]_1 \ (\text{scaled by } \frac{1}{\delta})}
 \\[12pt]
 [\Psi_{\ell+1}]_1 &= \frac{\alpha v_{\ell+1}(\tau) + \beta u_{\ell+1}(\tau) + w_{\ell+1}(\tau)G_1}{\delta}
 \\[8pt]
@@ -652,6 +652,46 @@ The **updated trusted setup supporting public inputs** is now the following:
 ```
 
 The trusted setup now publishes:
+
+```math
+([\alpha]_1, [\beta]_2, [\gamma]_2, [\delta]_2, \text{srs}_{\mathbb{G_1}}, \text{srs}_{\mathbb{G_2}}, \text{srs}_{h(x)t(x)}, [\Psi_1]_1, [\Psi_2]_1, \dots, [\Psi_{\ell}]_1, [\Psi_{\ell+1}]_1, \dots, [\Psi_m]_1)
+```
+
+The prover steps are the same as before:
+
+```math
+\begin{align*}
+[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau)
+\\
+[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau)
+\\
+[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau)
+\end{align*}
+```
+
+The verifier still computes the same as before:
+
+```math
+[X]_1 = \sum_{i=1}^{\ell}a_i[\Psi_i]_1
+```
+
+But the verification equation is updated to include pairing by $[\gamma]_2$ and/or $[\delta]_2$ to cancel out the denominators:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [X]_1 \bullet [\gamma]_2 + [C]_1 \bullet [\delta]_2 \quad (\text{if includes both } \gamma \text{ and } \delta)
+```
+
+Or:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [X]_1 \bullet G_2 + [C]_1 \bullet [\delta]_2 \quad (\text{if includes only } \delta)
+```
+
+#### Side Quest: How do the denominators cancel out by pairing with $[\gamma]_2$ and/or $[\delta]_2$ ?
+
+At this point, we know that $[X]_1$ is scaled by $\frac{1}{\gamma}$, and $[C]_1$ is scaled by $\frac{1}{\delta}$.
+
+Taking only just $[X]_1$ as an example, if we naively paired $[X]_1 \bullet G_2$ (as in $e([X]_1, G_2)$), we would get the following:
 
 ```math
 
