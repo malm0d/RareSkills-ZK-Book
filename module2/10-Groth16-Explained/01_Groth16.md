@@ -27,9 +27,9 @@ Then we convert the R1CS into a [QAP](https://rareskills.io/post/quadratic-arith
 
 ```math
 \begin{array}{}
-u_1(x), u_2(x), \dots, u_m(x) & \text{ m polynomials interpolated from the $m$ columns of $\mathbf{L}$ } \\
-v_1(x), v_2(x), \dots, v_m(x) & \text{ m polynomials interpolated from the $m$ columns of $\mathbf{R}$ } \\
-w_1(x), w_2(x), \dots, w_m(x) & \text{ m polynomials interpolated from the $m$ columns of $\mathbf{O}$ } \\
+u_1(x), u_2(x), \dots, u_m(x) & \text{ m polynomials interpolated from the } m \text{ columns of } \mathbf{L} \\
+v_1(x), v_2(x), \dots, v_m(x) & \text{ m polynomials interpolated from the } m \text{ columns of } \mathbf{R} \\
+w_1(x), w_2(x), \dots, w_m(x) & \text{ m polynomials interpolated from the } m \text{ columns of } \mathbf{O} \\
 \end{array}
 ```
 
@@ -55,9 +55,9 @@ If a third party creates a structured reference string (SRS) via a powers of tau
 
 ```math
 \begin{align*}
-[\Omega_{n-1}, \Omega_{n-2}, \dots, \Omega_{2}, \Omega_{1}, G_1] &= [\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^2G_1, \tau G_1, G_1] && \text{srs for $\mathbb{G_1}$} \\
-[\Theta_{n-1}, \Theta_{n-2}, \dots, \Theta_{2}, \Theta_{1}, G_1] &= [\tau^{n-1}G_2, \tau^{n-2}G_2, \dots, \tau^2G_2, \tau G_2, G_2] && \text{srs for $\mathbb{G_2}$} \\
-[\Upsilon_{n-2}, \Upsilon_{n-3}, \dots, \Upsilon_{1}, \Upsilon_{0}] &= [\tau^{n-2}t(\tau)G_1, \tau^{n-3}t(\tau)G_1, \dots, \tau t(\tau)G_1, t(\tau)G_1] && \text{srs for $h(x)t(x)$ in $\mathbb{G_1}$} \\
+[\Omega_{n-1}, \Omega_{n-2}, \dots, \Omega_{2}, \Omega_{1}, G_1] &= [\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^2G_1, \tau G_1, G_1] && \text{srs for } \mathbb{G_1} \\
+[\Theta_{n-1}, \Theta_{n-2}, \dots, \Theta_{2}, \Theta_{1}, G_1] &= [\tau^{n-1}G_2, \tau^{n-2}G_2, \dots, \tau^2G_2, \tau G_2, G_2] && \text{srs for } \mathbb{G_2} \\
+[\Upsilon_{n-2}, \Upsilon_{n-3}, \dots, \Upsilon_{1}, \Upsilon_{0}] &= [\tau^{n-2}t(\tau)G_1, \tau^{n-3}t(\tau)G_1, \dots, \tau t(\tau)G_1, t(\tau)G_1] && \text{srs for } h(x)t(x) \text{ in } \mathbb{G_1} \\
 \end{align*}
 ```
 
@@ -382,23 +382,23 @@ Concretely, the trusted setup computes the following:
 \begin{align*}
 \tau, \alpha, \beta &\leftarrow \text{random secret scalars}
 \\[1pt]
-[\alpha]_1 &\leftarrow \text{$\alpha$ commited in $\mathbb{G_1}$}
+[\alpha]_1 &\leftarrow \alpha \text{ commited in } \mathbb{G_1}
 \\[1pt]
-[\beta]_2 &\leftarrow \text{$\alpha$ commited in $\mathbb{G_2}$}
+[\beta]_2 &\leftarrow \alpha \text{ commited in } \mathbb{G_2}
 \\[1pt]
-[\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^{2}G_1, \tau G_1, G_1] &\leftarrow \text{srs for $\mathbb{G_1}$ ($\Omega_i$ terms)}
+[\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^{2}G_1, \tau G_1, G_1] &\leftarrow \text{srs for } \mathbb{G_1} \ (\Omega_i \ \text{terms})
 \\[1pt]
-[\tau^{n-1}G_2, \tau^{n-2}G_2, \dots, \tau^{2}G_2, \tau G_2, G_2] &\leftarrow \text{srs for $\mathbb{G_2}$ ($\Theta_i$ terms)}
+[\tau^{n-1}G_2, \tau^{n-2}G_2, \dots, \tau^{2}G_2, \tau G_2, G_2] &\leftarrow \text{srs for } \mathbb{G_2} \ (\Theta_i \ \text{terms})
 \\[1pt]
-[\tau^{n-2}t(\tau)G_1, \tau^{n-3}t(\tau)G_1, \dots, \tau^{2}t(\tau)G_1, \tau t(\tau)G_1, t(\tau)G_1] &\leftarrow \text{srs for $h(x)t(x)$ in $\mathbb{G_1}$ ($\Upsilon_i$ terms)}
+[\tau^{n-2}t(\tau)G_1, \tau^{n-3}t(\tau)G_1, \dots, \tau^{2}t(\tau)G_1, \tau t(\tau)G_1, t(\tau)G_1] &\leftarrow \text{srs for } h(x)t(x) \text{ in } \mathbb{G_1} \ (\Upsilon_i \ \text{terms})
 \\[1pt]
-[\Psi_1]_1 &\leftarrow \text{for $(\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau))G_1$}
+[\Psi_1]_1 &\leftarrow \text{for } (\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau))G_1
 \\[1pt]
-[\Psi_2]_1 &\leftarrow \text{for $(\alpha v_2(\tau) + \beta u_2(\tau) + w_2(\tau))G_1$}
+[\Psi_2]_1 &\leftarrow \text{for } (\alpha v_2(\tau) + \beta u_2(\tau) + w_2(\tau))G_1
 \\[1pt]
 \vdots
 \\[1pt]
-[\Psi_m]_1 &\leftarrow \text{for $(\alpha v_m(\tau) + \beta u_m(\tau) + w_m(\tau))G_1$}
+[\Psi_m]_1 &\leftarrow \text{for } (\alpha v_m(\tau) + \beta u_m(\tau) + w_m(\tau))G_1
 \end{align*}
 ```
 
@@ -489,7 +489,7 @@ And the verification equation is now:
 We had split the original sum term in $[C]_1$ into the following:
 
 ```math
-\sum_{i=1}^{m}a_i[\Psi_i]_1 = \underbrace{\sum_{i=1}^{\ell}a_i[\Psi_i]_1}_{\text{public part, as $[X]_1$}} + \underbrace{\sum_{i = \ \ell+1}^{m}a_i[\Psi_i]_1}_{\text{private part, kept as $[C]_1$}}
+\sum_{i=1}^{m}a_i[\Psi_i]_1 = \underbrace{\sum_{i=1}^{\ell}a_i[\Psi_i]_1}_{\text{public part, as } [X]_1} + \underbrace{\sum_{i = \ \ell+1}^{m}a_i[\Psi_i]_1}_{\text{private part, kept as } [C]_1}
 ```
 
 This is the same as saying: $[X]_1 + [C]_1 \in \mathbb{G_1}$.
@@ -595,7 +595,22 @@ Therefore, we need to prevent the prover from using $\Psi_1$ to $\Psi_{\ell}$ (i
 
 ### Introducing $\gamma$ and/or $\delta$
 
-To avoid the problem with having a dishonest prover using $\Psi_1$ to $\Psi_{\ell}$, the trusted setup introduces a **new scalar: $\gamma$ and(or) $\delta$**, to force $\Psi_{\ell + 1}$ to $\Psi_m$ to be separate from $\Psi_1$ to $\Psi_{\ell}$. 
+To avoid the problem with having a dishonest prover using $\Psi_1$ to $\Psi_{\ell}$, the trusted setup introduces a new scalar: $\gamma$ and(or) $\delta$, to force $\Psi_{\ell + 1}$ to $\Psi_m$ to be separate from $\Psi_1$ to $\Psi_{\ell}$. 
 
-**To do this, the tusted setup divides (multiplies by the [modular inverse](https://rareskills.io/post/finite-fields#multiplicative-inverse))**:
-- The
+To do this, **the tusted setup divides (multiplies by the [modular inverse](https://rareskills.io/post/finite-fields#multiplicative-inverse))**:
+
+- **The private terms of the witness (that constitute $[C]_1$, the sum the prover computes) by $\delta$;** *and/or*
+
+- **The public terms of the witness (that constitute $[X]_1$, the sum the verifier computes) by $\gamma$.**
+
+Since the $h(\tau)t(\tau)$ term is embedded in $[C]_1$, those terms also need to be divided by $\delta$. If either $\delta$ and $\gamma$ (in their commitments) have an unknown discrete logarithm, then the forgery described earlier along possible other methods of forgery are avoided. This method was used in Zcash's Sapling based [trusted setups](https://github.com/ebfull/phase2/blob/master/src/lib.rs#L808), where $\gamma$ is simply left to $G_2$ (as $[\gamma]_2$), and $\delta$ is still updated from $G_2$ (as $[\delta]_2$) to a random value at the later stages of the trusted setup.
+
+Another way to look at $\gamma$ and\or $\delta$, is that private inputs are now scaled by $1/\delta$, and public inputs are now scaled by $1/\gamma$. That means the prover's private terms of the witness in $[C]_1$ exist in the span of $\{[\Psi_i]_1 / \delta\}$ for $i = \ell + 1, \dots, m$; and the verifier's public terms of the witness in $[X]_1$ exist in the span of $\{[\Psi_i]_1 / \gamma \}$ for $i = 1, \dots, \ell$.
+
+Now the prover cannot freely move terms from the public part of the witness into the private part of the witness, since that would require rebalancing $\gamma$ and $\delta$. More so if $\delta$ or $\gamma$ are unknown, then the prover cannot algebraically manipulate both sides of the witness to forge proofs, e.g. taking a public term and multiplying it by $\delta/\gamma$ to make it look like a private term. This is the same as trying to solve the discrete logarithm problem.
+
+The updated trusted setup is now the following:
+
+```math
+
+```
