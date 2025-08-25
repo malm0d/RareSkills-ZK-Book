@@ -305,9 +305,9 @@ Notice that the rightmost term is essentially the original QAP expression. We ca
 ```math
 \begin{align*}
 \theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) \ + \ &\boxed{\sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}
-\\
+\\[4pt]
 &\text{becomes}
-\\
+\\[4pt]
 \theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) \ + \ &\boxed{\sum_{i=1}^{m}a_iw_i(x) + h(x)t(x)} 
 \end{align*}
 ```
@@ -404,7 +404,7 @@ Concretely, the trusted setup computes the following:
 
 We introduce the notation $[\Psi_i]_1$ to denote the $i$-th precomputed group element in $\mathbb{G_1}$ corrresponding to the linear combination of polynomials in $C$ evaluated at $\tau$ and commited in $\mathbb{G_1}$: $(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))G_1$; which the trusted setup provides to allow the generation of the $[C]_1$ term.
 
-The trusted setup thus publishes:
+The trusted setup publishes:
 
 ```math
 ([\alpha]_1, [\beta]_2, \text{srs}_{\mathbb{G_1}}, \text{srs}_{\mathbb{G_2}}, \text{srs}_{h(x)t(x)}, [\Psi_1]_1, [\Psi_2]_1, \dots, [\Psi_m]_1)
@@ -649,4 +649,10 @@ The **updated trusted setup supporting public inputs** is now the following:
 \\[1pt]
 [\Psi_{m}]_1 &= \frac{\alpha v_{m}(\tau) + \beta u_{m}(\tau) + w_{m}(\tau)G_1}{\delta}
 \end{align*}
+```
+
+The trusted setup now publishes:
+
+```math
+
 ```
