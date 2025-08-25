@@ -384,7 +384,7 @@ Concretely, the trusted setup computes the following:
 \\[1pt]
 [\alpha]_1 &\leftarrow \alpha \text{ commited in } \mathbb{G_1}
 \\[1pt]
-[\beta]_2 &\leftarrow \alpha \text{ commited in } \mathbb{G_2}
+[\beta]_2 &\leftarrow \beta \text{ commited in } \mathbb{G_2}
 \\[1pt]
 [\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^{2}G_1, \tau G_1, G_1] &\leftarrow \text{srs for } \mathbb{G_1} \ (\Omega_i \ \text{terms})
 \\[1pt]
@@ -609,8 +609,44 @@ Another way to look at $\gamma$ and\or $\delta$, is that private inputs are now 
 
 Now the prover cannot freely move terms from the public part of the witness into the private part of the witness, since that would require rebalancing $\gamma$ and $\delta$. More so if $\delta$ or $\gamma$ are unknown, then the prover cannot algebraically manipulate both sides of the witness to forge proofs, e.g. taking a public term and multiplying it by $\delta/\gamma$ to make it look like a private term. This is the same as trying to solve the discrete logarithm problem.
 
-The updated trusted setup is now the following:
+The **updated trusted setup supporting public inputs** is now the following:
 
 ```math
-
+\begin{align*}
+\tau, \alpha, \beta, \gamma, \delta &\leftarrow \text{random secret scalars}
+\\[4pt]
+[\alpha]_1 &\leftarrow \alpha \text{ commited in } \mathbb{G_1}
+\\[4pt]
+[\beta]_2 &\leftarrow \beta \text{ commited in } \mathbb{G_2}
+\\[4pt]
+[\gamma]_2 &\leftarrow \gamma \text{ commited in } \mathbb{G_2}
+\\[4pt]
+[\delta]_2 &\leftarrow \delta \text{ commited in } \mathbb{G_2}
+\\[4pt]
+[\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^{2}G_1, \tau G_1, G_1] &\leftarrow \text{srs for } \mathbb{G_1} \ (\Omega_i \ \text{terms})
+\\[4pt]
+[\tau^{n-1}G_2, \tau^{n-2}G_2, \dots, \tau^{2}G_2, \tau G_2, G_2] &\leftarrow \text{srs for } \mathbb{G_2} \ (\Theta_i \ \text{terms})
+\\[4pt]
+[\frac{\tau^{n-2}t(\tau)G_1}{\delta}, \frac{\tau^{n-3}t(\tau)G_1}{\delta}, \dots, \frac{\tau^{2}t(\tau)G_1}{\delta}, \frac{\tau t(\tau)G_1}{\delta}, \frac{t(\tau)G_1}{\delta}] &\leftarrow \text{srs for } h(x)t(x) \text{ in } \mathbb{G_1} \ (\Upsilon_i \ \text{terms})
+\\[12pt]
+&\boxed{\text{for public portion of the witness: } [X]_1 \ (\text{scaled by } 1/\gamma)}
+\\[12pt]
+[\Psi_1]_1 &= \frac{\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau)G_1}{\gamma}
+\\[8pt]
+[\Psi_2]_1 &= \frac{\alpha v_2(\tau) + \beta u_2(\tau) + w_2(\tau)G_1}{\gamma}
+\\[1pt]
+\vdots
+\\[1pt]
+[\Psi_{\ell}]_1 &= \frac{\alpha v_{\ell}(\tau) + \beta u_{\ell}(\tau) + w_{\ell}(\tau)G_1}{\gamma}
+\\[12pt]
+&\boxed{\text{for private portion of the witness: } [C]_1 \ (\text{scaled by } 1/\delta)}
+\\[12pt]
+[\Psi_{\ell+1}]_1 &= \frac{\alpha v_{\ell+1}(\tau) + \beta u_{\ell+1}(\tau) + w_{\ell+1}(\tau)G_1}{\delta}
+\\[8pt]
+[\Psi_{\ell+2}]_1 &= \frac{\alpha v_{\ell+2}(\tau) + \beta u_{\ell+2}(\tau) + w_{\ell+2}(\tau)G_1}{\delta}
+\\[1pt]
+\vdots
+\\[1pt]
+[\Psi_{m}]_1 &= \frac{\alpha v_{m}(\tau) + \beta u_{m}(\tau) + w_{m}(\tau)G_1}{\delta}
+\end{align*}
 ```
