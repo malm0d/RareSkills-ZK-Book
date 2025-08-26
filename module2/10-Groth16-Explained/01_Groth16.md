@@ -675,7 +675,7 @@ The verifier still computes the same as before:
 [X]_1 = \sum_{i=1}^{\ell}a_i[\Psi_i]_1
 ```
 
-But the verification equation is updated to include pairing by $[\gamma]_2$ and/or $[\delta]_2$ to cancel out the denominators:
+But the verification equation is updated to include pairing $[X]_1$ with $[\gamma]_2$ and/or $[C]_1$ with $[\delta]_2$ to cancel out the denominators:
 
 ```math
 [A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [X]_1 \bullet [\gamma]_2 + [C]_1 \bullet [\delta]_2 \quad (\text{if includes both } \gamma \text{ and } \delta)
@@ -687,12 +687,86 @@ Or:
 [A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [X]_1 \bullet G_2 + [C]_1 \bullet [\delta]_2 \quad (\text{if includes only } \delta)
 ```
 
+In most cases, like in Groth16, both $\gamma$ and $\delta$ are used.
+
+<hr>
+
 #### Side Quest: How do the denominators cancel out by pairing with $[\gamma]_2$ and/or $[\delta]_2$ ?
 
 At this point, we know that $[X]_1$ is scaled by $\frac{1}{\gamma}$, and $[C]_1$ is scaled by $\frac{1}{\delta}$.
 
-Taking only just $[X]_1$ as an example, if we naively paired $[X]_1 \bullet G_2$ (as in $e([X]_1, G_2)$), we would get the following:
+Taking just $[X]_1$ as an example, if we naively paired $[X]_1 \bullet G_2$ (as in $e([X]_1, G_2)$), we would get the following:
 
 ```math
+\begin{align*}
+e([X]_1, G_2) &= e \biggl(\sum_{i=1}^{\ell}a_i[\Psi_i]_1, G_2 \biggr) 
+\\[12pt]
+&= e \biggl(\frac{1}{\gamma} \sum_{i=1}^{\ell}a_i\Psi_iG_1, G_2 \biggr)
+\\[12pt]
+&= e \biggl(G_1, G_2 \biggr)^{\frac{1}{\gamma}\sum_{i=1}^{\ell}a_i\Psi_i}
+\end{align*}
+```
 
+But what we want in the verification is the unscaled sum: $e(G_1, G_2)^{\sum_{i=1}^{\ell}a_i\Psi_i}$.
+
+Instead of simply pairing with $G_2$, we can pair $[X]_1 \bullet [\gamma]_2$:
+
+```math
+\begin{align*}
+e([X]_1, [\gamma]_2) &= e \biggl(\frac{1}{\gamma} \sum_{i=1}^{\ell}a_i\Psi_iG_1, \gamma G_2 \biggr)
+\\[12pt]
+&= e \biggl(\bigl(G_1, G_2\bigr)^{\frac{1}{\gamma}\sum_{i=1}^{\ell}a_i\Psi_i}\biggr)^{\gamma}
+\\[12pt]
+&= e \bigl(G_1, G_2 \bigr)^{\sum_{i=1}^{\ell}a_i\Psi_i}
+\end{align*}
+```
+
+By leveraging on bilinearity, the denominator is cancelled out. The same logic also applies to why we pair $[C]_1 \bullet [\delta]_2$.
+
+<hr>
+
+## Part 3: Enforcing True Zero Knowledge: $r$ and $s$
+
+Our scheme is not yet truly Zero Knowledge. If an attacker is able to guess our witness vector $\mathbf{a}$ (which is possible if there is only a small range of valid inputs, e.g. secret voting from privileged addresses), then they can verify that their guess is correct by comparing their constructed proof to the original proof.
+
+As a trivial example, suppose our claim is $x_1$ and $x_2$ are both either $0$ or $1$. The corresponding arithmetic circuit will be:
+
+```math
+x_1(x_1 - 1) = 0 \\
+x_2(x_2 - 1) = 0
+```
+
+An attacker only needs to guess four combinations of ($x_1$, $x_2$), to figure out what the witness it: $(0, 0), (1, 1), (1, 0), (0, 1)$. That is, they guess a witness, generate a proof, and see if their answer matches the original proof.
+
+To prevent guessing by any malicious actor, **the prover needs to "salt" their proof**, and the verification equation needs to be modified (again) to accomodate the salt.
+
+The key here is, without randomization, the existing $[A]_1$, $[B]_2$, and $[C]_1$ would be deterministic linear functions of the witness $\mathbf{a}$. 
+
+```math
+\begin{align*}
+[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau)
+\\
+[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau)
+\\
+[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau)
+\end{align*}
+```
+
+That is, if we double the witness values, then each of those polynomial commitments will also double as well; and if we add two witness elements the resulting commitment is the sum. If we know what $a_i$ is, then $[A]_1$, $[B]_2$, and $[C]_1$ are computed in a completely deterministic way.
+
+The prover samples **two random field elements $r$ and $s$, and adds them to $A$ and $B$** to make the witness unguessable. An attacker would now have to guess both the witness and the salts $r$ and $s$. This is the "randomization" step in Groth16 which makes it different from earlier Pinnochio-like SNARKs.
+
+The prover binds their proof with random field elements $r$ and $s$ so that the same witness leads to different-looking proofs each time.
+
+
+```math
+\begin{align*}
+[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau) + r[\delta]_1
+\\[4pt]
+[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau) + s[\delta]_2
+\\[4pt]
+[B]_1 &= [\beta]_1 + \sum_{i=1}^{m}a_iv_i(\tau) + s[\delta]_1
+\\[4pt]
+[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau) + As + Br - rs[\delta]_1
+\end{align*}
 ```
