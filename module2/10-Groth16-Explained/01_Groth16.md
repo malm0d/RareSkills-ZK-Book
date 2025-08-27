@@ -738,7 +738,7 @@ x_2(x_2 - 1) = 0
 
 An attacker only needs to guess four combinations of ($x_1$, $x_2$), to figure out what the witness it: $(0, 0), (1, 1), (1, 0), (0, 1)$. That is, they guess a witness, generate a proof, and see if their answer matches the original proof.
 
-To prevent guessing by any malicious actor, **the prover needs to "salt" their proof**, and the verification equation needs to be modified (again) to accomodate the salt.
+To prevent guessing by a malicious actor, **the prover needs to "salt" their proof**, and the verification equation needs to be modified (again) to accommodate the salt.
 
 The key here is, without randomization, the existing $[A]_1$, $[B]_2$, and $[C]_1$ would be deterministic linear functions of the witness $\mathbf{a}$. 
 
@@ -756,17 +756,85 @@ That is, if we double the witness values, then each of those polynomial commitme
 
 The prover samples **two random field elements $r$ and $s$, and adds them to $A$ and $B$** to make the witness unguessable. An attacker would now have to guess both the witness and the salts $r$ and $s$. This is the "randomization" step in Groth16 which makes it different from earlier Pinnochio-like SNARKs.
 
-The prover binds their proof with random field elements $r$ and $s$ so that the same witness leads to different-looking proofs each time.
+The prover binds their proof with random field elements $r$ and $s$ so that the same witness leads to different-looking proofs each time. The prover adds salts to $[A]_1$, $[B]_2$, and $[C]_1$; and computes a new commitment $[B]_1$ which is needed so that the randomization in $B$ (with $s$) can interact correctly with $A$ (with $r$) during the computation of $[C]_1$.
 
 
 ```math
 \begin{align*}
-[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau) + r[\delta]_1
+[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau) + \underbrace{r[\delta]_1}_{\text{salt for } [A]_1}
 \\[4pt]
-[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau) + s[\delta]_2
+[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau) + \underbrace{s[\delta]_2}_{\text{salt for } [B]_2}
 \\[4pt]
-[B]_1 &= [\beta]_1 + \sum_{i=1}^{m}a_iv_i(\tau) + s[\delta]_1
+[B]_1 &= [\beta]_1 + \sum_{i=1}^{m}a_iv_i(\tau) + \underbrace{s[\delta]_1}_{\text{salt for } [B]_1}
 \\[4pt]
-[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau) + As + Br - rs[\delta]_1
+[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau) + \underbrace{As + Br - rs[\delta]_1}_{\text{terms to cancel salts eventually}}
 \end{align*}
 ```
+
+To get an intuition of how the salt terms interact and eventually cancel out, consider the verification equation:
+
+```math
+[A]_1 \bullet [B]_1 \stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [X]_1 \bullet [\gamma]_2 + [C]_1 \bullet [\delta]_2
+```
+
+We define the following terms to make life a little bearable:
+```math
+\begin{align*}
+\bar{A} &= \alpha + U(\tau) \\
+\bar{B} &= \beta + V(\tau) \\
+\end{align*}
+```
+
+And thus by definition:
+```math
+\begin{align*}
+[A]_1 &= \bar{A}G_1 + r\delta G_1 = (\alpha + U(\tau))G_1 + r\delta G_1 = [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau) + r[\delta]_1
+\\[16pt]
+[B]_2 &= \bar{B}G_2 + s\delta G_2 = (\beta + V(\tau))G_2 + s\delta G_2 = [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau) + s[\delta]_2
+\\[16pt]
+[C]_1 &= \dots + \bar{A}sG_1 + \bar{B}rG_1 - rs\delta G_1 = \dots + As + Br - rs[\delta]_1
+\end{align*}
+```
+
+When we expand the LHS of the verification equation, we get - by bilinearity:
+
+```math
+\begin{align*}
+e([A]_1, [B]_2) &= e(\bar{A}G_1 + r\delta G_1, \bar{B}G_2 + s\delta G_2)
+\\[4pt]
+&= \underbrace{e(\bar{A}G_1, \bar{B}G_2)}_{L1} \cdot \underbrace{e(\bar{A}G_1, s\delta G_2)}_{L2} \cdot \underbrace{e(r\delta G_1, \bar{B}G_2)}_{L3} \cdot \underbrace{e(r\delta G_1, s\delta G_2)}_{L4}
+\end{align*}
+```
+
+Focusing only on $[C]_1 \bullet [\delta]_2$ on the RHS, ignoring everything except the salt-carrying parts of $[C]_1$, our expansion gives us:
+
+```math
+\begin{align*}
+e([C]_1, [\delta]_2) &= e(\dots + \bar{A}sG_1 + \bar{B}rG_1 - rs\delta G_1, \delta G_2)
+\\[4pt]
+&= \dots \underbrace{e(\bar{A}sG_1, \delta G_2)}_{R1} \cdot \underbrace{e(\bar{B}rG_1, \delta G_2)}_{R2} \cdot \underbrace{e(-rs\delta G_1, \delta G_2)}_{R3}
+\end{align*}
+```
+
+Notice that we have $B$ in $\mathbb{G_2}$ and $\mathbb{G_1}$ from the terms $\bar{B}G_2$ and $\bar{B}rG_1$, thus the need to calculate $[B]_1$ as shown earlier. After the expansions, we see that there are identical terms on both sides of the equation: $L2 = R1$ and $L3 = R2$. And since these terms are identical, they cancel each other out across the equality. 
+
+```math
+\begin{align*}
+L2 = R1 &\rightarrow e(\bar{A}G_1, s\delta G_2) = e(\bar{A}sG_1, \delta G_2) \\ &\rightarrow e(G_1, G_2)^{\bar{A}s\delta} = e(G_1, G_2)^{\bar{A}s\delta}
+\\[8pt]
+L3 = R2 &\rightarrow e(r\delta G_1, \bar{B}G_2) = e(\bar{B}rG_1, \delta G_2) \\ &\rightarrow e(G_1, G_2)^{r\delta\bar{B}} = e(G_1, G_2)^{\bar{B}r\delta}
+\end{align*}
+```
+
+We also see a pair of inverses across the equality: $L4$ and $R3$.
+
+```math
+\begin{align*}
+L4 &\rightarrow e(r\delta G_1, s\delta G_2) = e(G_1, G_2)^{rs\delta^2} \\
+R3 &\rightarrow e(-rs\delta G_1, \delta G_2) = e(G_1, G_2)^{-rs\delta^2}
+\end{align*}
+```
+
+If we multiply the inverses, we get the identity: $g^{rs\delta^2} \cdot g^{-rs\delta^2} = 1$. Therefore, by multiplying the inverses across the equality, they cancel each other out.
+
+We can think of $As + Br - rs[\delta]_1$ as introducing $As$ and $Br$ to correct the multiplication of $A$ with the salt $s$, and the multiplication of $B$ with the salt $r$ respectively; and introducing $-rs[\delta]_1$ to cancel the product of both salts. Every salt factor on the LHS is matched by an identical (or inverse) salt factor on the RHS, and so all $r$ and $s$ contributions cancel exactly. After these cancellations, what remains on both sides are exactly the non-salt terms, leaving the verifier to sees the correct verification equation.
