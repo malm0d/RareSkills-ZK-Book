@@ -771,6 +771,8 @@ The prover binds their proof with random field elements $r$ and $s$ so that the 
 \end{align*}
 ```
 
+### Intuition
+
 To get an intuition of how the salt terms interact and eventually cancel out, consider the verification equation:
 
 ```math
@@ -839,7 +841,9 @@ If we multiply the inverses, we get the identity: $g^{rs\delta^2} \cdot g^{-rs\d
 
 We can think of $As + Br - rs[\delta]_1$ as introducing $As$ and $Br$ to correct the multiplication of $A$ with the salt $s$, and the multiplication of $B$ with the salt $r$ respectively; and introducing $-rs[\delta]_1$ to cancel the product of both salts. Every salt factor on the LHS is matched by an identical (or inverse) salt factor on the RHS, and so all $r$ and $s$ contributions cancel exactly. After these cancellations, what remains on both sides are exactly the non-salt terms, leaving the verifier to sees the correct verification equation.
 
-To derive the final verification formula, we temporarily ignore that we dont know the discrete logarithms of the Greek letter terms and compute the LHS of the verification equation $AB$ (note that we are not dealing in commitments here):
+### Derivation
+
+To derive the final verification formula, we temporarily ignore that we dont know the discrete logarithms of the Greek letter terms and compute the LHS of the verification equation $AB$ (note that we are not dealing in elliptic curve commitments here):
 
 ```math
 \underbrace{(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)}_{A} \underbrace{(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)}_{B}
@@ -856,9 +860,9 @@ Remember when we first talked about the $\alpha$ and $\beta$ terms and re-derive
 ```math
 \begin{align*}
 [C]_1 &= \alpha\sum_{i=1}^{m}a_iv_i(\tau) + \beta\sum_{i=1}^{m}a_iu_i(\tau) + \sum_{i=1}^{m}a_iw_i(\tau) + h(\tau)t(\tau) \\[12pt]
-&= \alpha\sum_{i=1}^{m}a_iv_i(\tau) + \beta\sum_{i=1}^{m}a_iu_i(\tau) + \sum_{i = 1}^{m}a_iu_i(x) \sum_{i = 1}^{m}a_iv_i(x) \\
+&= \alpha\sum_{i=1}^{m}a_iv_i(\tau) + \beta\sum_{i=1}^{m}a_iu_i(\tau) + \sum_{i = 1}^{m}a_iu_i(\tau) \sum_{i = 1}^{m}a_iv_i(\tau) \\
 \\
-&\text{because of the QAP definition: } \sum_{i = 1}^{m}a_iu_i(x) \sum_{i = 1}^{m}a_iv_i(x) = \sum_{i=1}^{m}a_iw_i(\tau) + h(\tau)t(\tau)
+&\text{because of the QAP definition: } \sum_{i = 1}^{m}a_iu_i(\tau) \sum_{i = 1}^{m}a_iv_i(\tau) = \sum_{i=1}^{m}a_iw_i(\tau) + h(\tau)t(\tau)
 \end{align*}
 ```
 
@@ -871,5 +875,58 @@ We can thus select out the original terms for $C$:
 And combine them on the left, leaving the new terms (with salt factors) on the right:
 
 ```math
-\alpha\beta + \underbrace{\boxed{\alpha\sum_{i=1}^{m}a_iv_i(x) + \beta\sum_{i=1}^{m}a_iu_i(x) + \sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}}_{C} + \alpha s\delta + s\delta \sum_{i=1}^{m}a_iu_i(x) + r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + r\delta s\delta
+\alpha\beta + \underbrace{\boxed{\alpha\sum_{i=1}^{m}a_iv_i(x) + \beta\sum_{i=1}^{m}a_iu_i(x) + \sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}}_{C} + \underbrace{\alpha s\delta + s\delta \sum_{i=1}^{m}a_iu_i(x) + r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + r\delta s\delta}_{\text{salt-factored terms}}
 ```
+
+Remember that the $C$ term we have here is in its problematic form. We can rewrite it to its optimized one:
+
+```math
+\alpha\beta + \underbrace{\boxed{\sum_{i=1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}}_{C} + \underbrace{\alpha s\delta + s\delta \sum_{i=1}^{m}a_iu_i(x) + r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + r\delta s\delta}_{\text{salt-factored terms}}
+```
+
+
+We further rearrange the salt-factored terms to write them in terms of $As\delta$ and $Br\delta$, where we can think of them as:
+
+```math
+As\delta = A \cdot s\delta \quad \text{and} \quad Br\delta = B \cdot r\delta
+```
+
+And we also split $r\delta s\delta$ into the following terms:
+
+```math
+\begin{align*}
+r\delta s\delta &= rs\delta^{2} \\
+&= rs\delta^{2} + (rs\delta^{2} - rs\delta^{2})
+\end{align*}
+```
+
+This brings us to:
+
+```math
+\alpha\beta + \underbrace{\sum_{i=1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}_{C} + \underbrace{\alpha s\delta + s\delta \sum_{i=1}^{m}a_iu_i(x) + rs\delta^{2} + r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + rs\delta^2 - rs\delta^2}_{\text{salt-factored terms}}
+```
+
+And by grouping the $s$ and $r$ in the salt-factored terms together by parenthesis:
+
+```math
+\alpha\beta + \underbrace{\sum_{i=1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}_{C} + \underbrace{\biggl(\alpha s\delta + s\delta \sum_{i=1}^{m}a_iu_i(x) + rs\delta^{2} \biggr) + \biggl(r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + rs\delta^2 \biggr) - rs\delta^2}_{\text{salt-factored terms}}
+```
+
+We can factor out $s\delta$ and $r\delta$ respectively in the salt-factored terms:
+
+```math
+\alpha\beta + \underbrace{\sum_{i=1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}_{C} + \underbrace{\biggl(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta \biggr)s\delta + \biggl(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta \biggr)r\delta - rs\delta^2}_{\text{salt-factored terms}}
+```
+
+We can then substitute $A$ and $B$ from when we first started deriving the final verification formula:
+
+```math
+\alpha\beta + \underbrace{\sum_{i=1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}_{C} + \underbrace{As\delta + Br\delta - rs\delta^2}_{\text{salt-factored terms}}
+```
+
+The final equation is therefore:
+
+```math
+\underbrace{(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)}_{A} \underbrace{(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)}_{B} = \alpha\beta + \underbrace{\sum_{i=1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}_{C} + \underbrace{As\delta + Br\delta - rs\delta^2}_{\text{salt-factored terms}}
+```
+
