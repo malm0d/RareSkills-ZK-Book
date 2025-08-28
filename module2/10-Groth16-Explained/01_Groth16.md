@@ -838,3 +838,32 @@ R3 &\rightarrow e(-rs\delta G_1, \delta G_2) = e(G_1, G_2)^{-rs\delta^2}
 If we multiply the inverses, we get the identity: $g^{rs\delta^2} \cdot g^{-rs\delta^2} = 1$. Therefore, by multiplying the inverses across the equality, they cancel each other out.
 
 We can think of $As + Br - rs[\delta]_1$ as introducing $As$ and $Br$ to correct the multiplication of $A$ with the salt $s$, and the multiplication of $B$ with the salt $r$ respectively; and introducing $-rs[\delta]_1$ to cancel the product of both salts. Every salt factor on the LHS is matched by an identical (or inverse) salt factor on the RHS, and so all $r$ and $s$ contributions cancel exactly. After these cancellations, what remains on both sides are exactly the non-salt terms, leaving the verifier to sees the correct verification equation.
+
+To derive the final verification formula, we temporarily ignore that we dont know the discrete logarithms of the Greek letter terms and compute the LHS of the verification equation $AB$ (note that we are not dealing in commitments here):
+
+```math
+\underbrace{(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)}_{A} \underbrace{(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)}_{B}
+```
+
+Expanding the terms gives us the following:
+
+```math
+\alpha\beta + \alpha\sum_{i=1}^{m}a_iv_i(x) + \alpha s\delta + \beta\sum_{i=1}^{m}a_iu_i(x) + \sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x) + s\delta \sum_{i=1}^{m}a_iu_i(x) + r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + r\delta s\delta
+```
+
+Remember when we first talked about the $\alpha$ and $\beta$ terms and re-derived the QAP formula (before we split $[C]_1$ into $[X]_1$ and $[C]_1$), we established that:
+
+```math
+\begin{align*}
+[C]_1 &= \alpha\sum_{i=1}^{m}a_iv_i(\tau) + \beta\sum_{i=1}^{m}a_iu_i(\tau) + \sum_{i=1}^{m}a_iw_i(\tau) + h(\tau)t(\tau) \\[12pt]
+&= \alpha\sum_{i=1}^{m}a_iv_i(\tau) + \beta\sum_{i=1}^{m}a_iu_i(\tau) + \sum_{i = 1}^{m}a_iu_i(x) \sum_{i = 1}^{m}a_iv_i(x) \\
+\\
+&\text{because of the QAP definition: } \sum_{i = 1}^{m}a_iu_i(x) \sum_{i = 1}^{m}a_iv_i(x) = \sum_{i=1}^{m}a_iw_i(\tau) + h(\tau)t(\tau)
+\end{align*}
+```
+
+We can thus select out the original terms for $C$:
+
+```math
+\alpha\beta + \underbrace{\boxed{\alpha\sum_{i=1}^{m}a_iv_i(x)}}_{\text{part of } C} + \alpha s\delta + \underbrace{\boxed{\beta\sum_{i=1}^{m}a_iu_i(x)}}_{\text{part of } C} + \underbrace{\boxed{\sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}}_{\text{part of } C} + s\delta \sum_{i=1}^{m}a_iu_i(x) + r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + r\delta s\delta
+```
