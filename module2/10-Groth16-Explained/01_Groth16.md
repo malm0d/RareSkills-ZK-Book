@@ -304,11 +304,11 @@ Notice that the rightmost term is essentially the original QAP expression. We ca
 
 ```math
 \begin{align*}
-\theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) \ + \ &\boxed{\sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}
+\theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) \ + \ &\underline{\boxed{\sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}}
 \\[4pt]
 &\text{becomes}
 \\[4pt]
-\theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) \ + \ &\boxed{\sum_{i=1}^{m}a_iw_i(x) + h(x)t(x)} 
+\theta\eta + \theta\sum_{i=1}^{m}a_iv_i(x) + \eta\sum_{i=1}^{m}a_iu_i(x) \ + \ &\underline{\boxed{\sum_{i=1}^{m}a_iw_i(x) + h(x)t(x)}} 
 \end{align*}
 ```
 
@@ -369,10 +369,10 @@ With some algebraic manipulation, we can combine the sum terms into a single sum
 And then factor out $a_i$:
 
 ```math
-= \sum_{i=1}^{m}a_i\boxed{(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))}
+= \sum_{i=1}^{m}a_i\underline{\boxed{(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))}}
 ```
 
-From here, the trusted setup can create $m$ linear combinations of polynomials evaluated at $\tau$ from the boxed term above. The prover can then use those evaluated polynomials - which would be scalars committed to the elliptic curve group $\mathbb{G_1}$, to compute the sum. The exact details are shown in the next section.
+From here, the trusted setup can create $m$ linear combinations of polynomials evaluated at $\tau$ from the boxed/underlined term above. The prover can then use those evaluated polynomials - which would be scalars committed to the elliptic curve group $\mathbb{G_1}$, to compute the sum. The exact details are shown in the next section.
 
 ## Trusted Setup Steps
 
@@ -415,7 +415,7 @@ The trusted setup publishes:
 Before, the $[C]_1$ term would have been:
 
 ```math
-[C]_1 = \sum_{i=1}^{m}a_i\boxed{(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))} + h(\tau)t(\tau)
+[C]_1 = \sum_{i=1}^{m}a_i\underline{\boxed{(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))}} + h(\tau)t(\tau)
 ```
 
 Which contains the secret scalars $\alpha$ and $\beta$, and would hence be impossible for the prover to compute. With the new $[\Psi_i]_1$ terms provided in the trusted setup, the prover can now compute:
@@ -629,7 +629,7 @@ The **updated trusted setup supporting public inputs** is now the following:
 \\[4pt]
 [\frac{\tau^{n-2}t(\tau)G_1}{\delta}, \frac{\tau^{n-3}t(\tau)G_1}{\delta}, \dots, \frac{\tau^{2}t(\tau)G_1}{\delta}, \frac{\tau t(\tau)G_1}{\delta}, \frac{t(\tau)G_1}{\delta}] &\leftarrow \text{srs for } h(x)t(x) \text{ in } \mathbb{G_1} \ (\Upsilon_i \ \text{terms})
 \\[12pt]
-&\boxed{\text{for public portion of the witness: } [X]_1 \ (\text{scaled by } \frac{1}{\gamma})}
+&\underline{\boxed{\text{for public portion of the witness: } [X]_1 \ (\text{scaled by } \frac{1}{\gamma})}}
 \\[12pt]
 [\Psi_1]_1 &= \frac{\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau)G_1}{\gamma}
 \\[8pt]
@@ -639,7 +639,7 @@ The **updated trusted setup supporting public inputs** is now the following:
 \\[1pt]
 [\Psi_{\ell}]_1 &= \frac{\alpha v_{\ell}(\tau) + \beta u_{\ell}(\tau) + w_{\ell}(\tau)G_1}{\gamma}
 \\[12pt]
-&\boxed{\text{for private portion of the witness: } [C]_1 \ (\text{scaled by } \frac{1}{\delta})}
+&\underline{\boxed{\text{for private portion of the witness: } [C]_1 \ (\text{scaled by } \frac{1}{\delta})}}
 \\[12pt]
 [\Psi_{\ell+1}]_1 &= \frac{\alpha v_{\ell+1}(\tau) + \beta u_{\ell+1}(\tau) + w_{\ell+1}(\tau)G_1}{\delta}
 \\[8pt]
@@ -866,4 +866,10 @@ We can thus select out the original terms for $C$:
 
 ```math
 \alpha\beta + \underbrace{\boxed{\alpha\sum_{i=1}^{m}a_iv_i(x)}}_{\text{part of } C} + \alpha s\delta + \underbrace{\boxed{\beta\sum_{i=1}^{m}a_iu_i(x)}}_{\text{part of } C} + \underbrace{\boxed{\sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}}_{\text{part of } C} + s\delta \sum_{i=1}^{m}a_iu_i(x) + r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + r\delta s\delta
+```
+
+And combine them on the left, leaving the new terms (with salt factors) on the right:
+
+```math
+\alpha\beta + \underbrace{\boxed{\alpha\sum_{i=1}^{m}a_iv_i(x) + \beta\sum_{i=1}^{m}a_iu_i(x) + \sum_{i=1}^{m}a_iu_i(x)\sum_{i=1}^{m}a_iv_i(x)}}_{C} + \alpha s\delta + s\delta \sum_{i=1}^{m}a_iu_i(x) + r\delta \beta + r\delta\sum_{i=1}^{m}a_iv_i(x) + r\delta s\delta
 ```
