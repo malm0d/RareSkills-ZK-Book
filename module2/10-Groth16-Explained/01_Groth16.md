@@ -967,3 +967,12 @@ We arrive back at:
 ```math
 \underbrace{[A]_1 \bullet [B]_1}_{\text{(prover)}} \stackrel{?}{=} \underbrace{[\alpha]_1 \bullet [\beta]_2}_{\text{(verifier)}} + \underbrace{[X]_1 \bullet [\gamma]_2}_{\text{(verifier)}} + \underbrace{[C]_1}_{\text{(prover)}} \bullet \underbrace{[\delta]_2}_{\text{(prover)}}
 ```
+
+## Groth16 Proof Algorithm, End-to-End
+
+Now we can show the Groth16 algorithm end-to-end. The trusted setup and verification steps remain unchanged from the end of the previous example - where we incorporated $\gamma$ and $\delta$ (end of part 2).
+
+Only the prover's computation is updated to incorporate the salts $r$ and $s$.
+
+### Trusted Setup
+
