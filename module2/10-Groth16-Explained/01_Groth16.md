@@ -767,7 +767,7 @@ The prover binds their proof with random field elements $r$ and $s$ so that the 
 \\[4pt]
 [B]_1 &= [\beta]_1 + \sum_{i=1}^{m}a_iv_i(\tau) + \underbrace{s[\delta]_1}_{\text{salt for } [B]_1}
 \\[4pt]
-[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau) + \underbrace{As + Br - rs[\delta]_1}_{\text{terms to cancel salts eventually}}
+[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau) + \underbrace{[A]_1s + [B]_1r - rs[\delta]_1}_{\text{terms to cancel salts eventually}}
 \end{align*}
 ```
 
@@ -794,7 +794,7 @@ And thus by definition:
 \\[16pt]
 [B]_2 &= \bar{B}G_2 + s\delta G_2 = (\beta + V(\tau))G_2 + s\delta G_2 = [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau) + s[\delta]_2
 \\[16pt]
-[C]_1 &= \dots + \bar{A}sG_1 + \bar{B}rG_1 - rs\delta G_1 = \dots + As + Br - rs[\delta]_1
+[C]_1 &= \dots + \bar{A}sG_1 + \bar{B}rG_1 - rs\delta G_1 = \dots + [A]_1s + [B]_1r - rs[\delta]_1
 \end{align*}
 ```
 
@@ -930,3 +930,40 @@ The final equation is therefore:
 \underbrace{(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)}_{A} \underbrace{(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)}_{B} = \alpha\beta + \underbrace{\sum_{i=1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}_{C} + \underbrace{As\delta + Br\delta - rs\delta^2}_{\text{salt-factored terms}}
 ```
 
+We now break $C$ into its public and private terms - $X$ and $C$ respectively:
+
+```math
+\underbrace{(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)}_{A} \underbrace{(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)}_{B} = \alpha\beta + \underbrace{\sum_{i=1}^{\ell}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x))}_{X \text{ (public)}} + \underbrace{\sum_{i=\ell+1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x) + As\delta + Br\delta - rs\delta^2}_{C \text{ (private)}}
+```
+
+We also want to separate the public portion and private portion of the proof by $\gamma$ and $\delta$ respectively (which includes multiplying with the modular inverse (dividing) and cancelling out the denominators):
+
+```math
+\underbrace{(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)}_{A} \underbrace{(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)}_{B} = \alpha\beta + \gamma \cdot \underbrace{\frac{\sum_{i=1}^{\ell}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x))}{\gamma}}_{X \text{ (public)}} + \delta \cdot \underbrace{\frac{\sum_{i=\ell+1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x) + As\delta + Br\delta - rs\delta^2}{\delta}}_{C \text{ (private)}}
+```
+
+And $\delta$ cancels for the salt-factored terms in $C$:
+
+```math
+\underbrace{(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)}_{A} \underbrace{(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)}_{B} = \alpha\beta + \gamma \cdot \underbrace{\frac{\sum_{i=1}^{\ell}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x))}{\gamma}}_{X \text{ (public)}} + \delta \cdot \underbrace{\frac{\sum_{i=\ell+1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}{\delta} + As + Br - rs\delta }_{C \text{ (private)}}
+```
+
+We can make clear the verifier and prover portions of the verification equation:
+
+```math
+\underbrace{(\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)}_{A \text{ (prover)}} \underbrace{(\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)}_{B \text{ (prover)}} = \underbrace{\alpha\beta}_{\text{(verifier)}} + \underbrace{\gamma}_{\text{(verifier)}} \cdot \underbrace{\frac{\sum_{i=1}^{\ell}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x))}{\gamma}}_{X \text{ (public, verifier)}} + \underbrace{\delta}_{\text{(verifier)}} \cdot \underbrace{\frac{\sum_{i=\ell+1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}{\delta} + As + Br - rs\delta }_{C \text{ (private, prover)}}
+```
+
+And if we bring the scalar derivation back to its commitment form:
+
+```math
+\begin{align*}
+\underbrace{\biggl((\alpha + \sum_{i=1}^{m}a_iu_i(x) + r\delta)G_1 \biggr)}_{A \text{ (prover)}} \underbrace{\biggl((\beta + \sum_{i=1}^{m}a_iv_i(x) + s\delta)G_2 \biggr)}_{B \text{ (prover)}} = \underbrace{\bigl(\alpha G_1 \bigr)\bigl(\beta G_2 \bigr)}_{\text{(verifier)}} + \underbrace{\gamma G_2}_{\text{(verifier)}} \cdot \underbrace{\biggl(\frac{\sum_{i=1}^{\ell}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x))}{\gamma} \biggr)G_1}_{X \text{ (public, verifier)}} + \underbrace{\delta G_2}_{\text{(verifier)}} \cdot \underbrace{\biggl(\frac{\sum_{i=\ell+1}^{m}a_i(\alpha v_i(x) + \beta u_i(x) + w_i(x)) + h(x)t(x)}{\delta} + As + Br - rs\delta \biggr)G_1}_{C \text{ (private, prover)}}
+\end{align*}
+```
+
+We arrive back at: 
+
+```math
+\underbrace{[A]_1 \bullet [B]_1}_{\text{(prover)}} \stackrel{?}{=} \underbrace{[\alpha]_1 \bullet [\beta]_2}_{\text{(verifier)}} + \underbrace{[X]_1 \bullet [\gamma]_2}_{\text{(verifier)}} + \underbrace{[C]_1}_{\text{(prover)}} \bullet \underbrace{[\delta]_2}_{\text{(prover)}}
+```
