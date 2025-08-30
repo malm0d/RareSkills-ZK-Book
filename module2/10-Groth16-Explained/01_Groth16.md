@@ -965,7 +965,7 @@ And if we bring the scalar derivation back to its commitment form:
 We arrive back at: 
 
 ```math
-\underbrace{[A]_1 \bullet [B]_1}_{\text{(prover)}} \stackrel{?}{=} \underbrace{[\alpha]_1 \bullet [\beta]_2}_{\text{(verifier)}} + \underbrace{[X]_1 \bullet [\gamma]_2}_{\text{(verifier)}} + \underbrace{[C]_1}_{\text{(prover)}} \bullet \underbrace{[\delta]_2}_{\text{(prover)}}
+\underbrace{[A]_1 \bullet [B]_1}_{\text{(prover)}} \stackrel{?}{=} \underbrace{[\alpha]_1 \bullet [\beta]_2}_{\text{(verifier)}} + \underbrace{[X]_1 \bullet [\gamma]_2}_{\text{(verifier)}} + \underbrace{[C]_1}_{\text{(prover)}} \bullet \underbrace{[\delta]_2}_{\text{(verifier)}}
 ```
 
 ## Groth16 Proof Algorithm, End-to-End
@@ -975,4 +975,94 @@ Now we can show the Groth16 algorithm end-to-end. The trusted setup and verifica
 Only the prover's computation is updated to incorporate the salts $r$ and $s$.
 
 ### Trusted Setup
+
+```math
+\begin{align*}
+\tau, \alpha, \beta, \gamma, \delta &\leftarrow \text{random secret scalars}
+\\[4pt]
+[\alpha]_1 &\leftarrow \alpha \text{ commited in } \mathbb{G_1}
+\\[4pt]
+[\beta]_2 &\leftarrow \beta \text{ commited in } \mathbb{G_2}
+\\[4pt]
+[\gamma]_2 &\leftarrow \gamma \text{ commited in } \mathbb{G_2}
+\\[4pt]
+[\delta]_2 &\leftarrow \delta \text{ commited in } \mathbb{G_2}
+\\[4pt]
+[\tau^{n-1}G_1, \tau^{n-2}G_1, \dots, \tau^{2}G_1, \tau G_1, G_1] &\leftarrow \text{srs for } \mathbb{G_1} \ (\Omega_i \ \text{terms})
+\\[4pt]
+[\tau^{n-1}G_2, \tau^{n-2}G_2, \dots, \tau^{2}G_2, \tau G_2, G_2] &\leftarrow \text{srs for } \mathbb{G_2} \ (\Theta_i \ \text{terms})
+\\[4pt]
+[\frac{\tau^{n-2}t(\tau)G_1}{\delta}, \frac{\tau^{n-3}t(\tau)G_1}{\delta}, \dots, \frac{\tau^{2}t(\tau)G_1}{\delta}, \frac{\tau t(\tau)G_1}{\delta}, \frac{t(\tau)G_1}{\delta}] &\leftarrow \text{srs for } h(x)t(x) \text{ in } \mathbb{G_1} \ (\Upsilon_i \ \text{terms})
+\\[12pt]
+&\underline{\boxed{\text{for public portion of the witness: } [X]_1 \ (\text{scaled by } \frac{1}{\gamma})}}
+\\[12pt]
+[\Psi_1]_1 &= \frac{\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau)G_1}{\gamma}
+\\[8pt]
+[\Psi_2]_1 &= \frac{\alpha v_2(\tau) + \beta u_2(\tau) + w_2(\tau)G_1}{\gamma}
+\\[1pt]
+\vdots
+\\[1pt]
+[\Psi_{\ell}]_1 &= \frac{\alpha v_{\ell}(\tau) + \beta u_{\ell}(\tau) + w_{\ell}(\tau)G_1}{\gamma}
+\\[12pt]
+&\underline{\boxed{\text{for private portion of the witness: } [C]_1 \ (\text{scaled by } \frac{1}{\delta})}}
+\\[12pt]
+[\Psi_{\ell+1}]_1 &= \frac{\alpha v_{\ell+1}(\tau) + \beta u_{\ell+1}(\tau) + w_{\ell+1}(\tau)G_1}{\delta}
+\\[8pt]
+[\Psi_{\ell+2}]_1 &= \frac{\alpha v_{\ell+2}(\tau) + \beta u_{\ell+2}(\tau) + w_{\ell+2}(\tau)G_1}{\delta}
+\\[1pt]
+\vdots
+\\[1pt]
+[\Psi_{m}]_1 &= \frac{\alpha v_{m}(\tau) + \beta u_{m}(\tau) + w_{m}(\tau)G_1}{\delta}
+\end{align*}
+```
+
+And the trusted setup publishes:
+
+```math
+([\alpha]_1, [\beta]_2, [\gamma]_2, [\delta]_2, \text{srs}_{\mathbb{G_1}}, \text{srs}_{\mathbb{G_2}}, \text{srs}_{h(x)t(x)}, [\Psi_1]_1, [\Psi_2]_1, \dots, [\Psi_{\ell}]_1, [\Psi_{\ell+1}]_1, \dots, [\Psi_m]_1)
+```
+
+### Prover Steps
+
+The prover has the witness $\mathbf{a}$, generates the random scalars (field elements) $r$ and $s$, and computes an additional commitment $[B]_1$:
+
+```math
+\begin{align*}
+[A]_1 &= [\alpha]_1 + \sum_{i=1}^{m}a_iu_i(\tau) + r[\delta]_1
+\\
+[B]_2 &= [\beta]_2 + \sum_{i=1}^{m}a_iv_i(\tau) + s[\delta]_2
+\\
+[B]_1 &= [\beta]_1 + \sum_{i=1}^{m}a_iv_i(\tau) + s[\delta]_1
+\\
+[C]_1 &= \sum_{i= \ \ell+1}^{m}a_i[\Psi_i]_1 + h(\tau)t(\tau) + [A]_1s + [B]_1r - rs[\delta]_1
+\end{align*}
+```
+
+The prover now publishes:
+
+```math
+([A]_1, [B]_2, [C]_1, [\mathbf{a}_1, \dots, \mathbf{a}_{\ell}])
+```
+
+Note that $[B]_1$ does not need to be published because it is only used in the computation for $[C]_1$. And the prover publishes $[\mathbf{a}_1, \dots, \mathbf{a}_{\ell}]$ which is the public portion of the witness, which the verifier needs to compute $[X]_1$. The private portion of the witness $[\mathbf{a}_{\ell+1}, \dots, \mathbf{a}_{m}]$ remains hidden with the prover.
+
+### Verifier Steps
+
+The verifier checks:
+
+```math
+\begin{align*}
+[X]_1 &= \sum_{i=1}^{\ell}a_i[\Psi_i]_1
+\\
+[A]_1 \bullet [B]_1 &\stackrel{?}{=} [\alpha]_1 \bullet [\beta]_2 + [X]_1 \bullet [\gamma]_2 + [C]_1 \bullet [\delta]_2
+\end{align*}
+```
+
+## Verifying Groth16 In Solidity
+
+At this point, we have sufficient knowledge to understand the proof verification code in Solidity. Here is [Tornado Cash's proof verification code](https://github.com/tornadocash/tornado-core/blob/master/contracts/Verifier.sol#L192).
+
+The reader is encouraged to read the source code closely. If the reader is comfortable with inline assembly in Solidity, then understanding the source code will not be difficult as the variable names are consistent with the ones in this chapter.
+
+There is also a library for [Groth16 support on Solana](https://lib.rs/crates/groth16-solana).
 

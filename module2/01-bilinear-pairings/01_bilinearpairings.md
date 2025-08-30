@@ -564,7 +564,11 @@ $$
 Note that either inputs can be negated, and we will still get the multiplicative inverse of the bilinear pairing, but it is simpler to negate a $G_1$ point than a $G_2$ point. Additionally, a minus sign in the domain becomes “take the multiplicative inverse” in the target (i.e. negation in $G_1$ translates to inversion in $G_T$). So technically:
 
 $$
--e(A_1, B_2) = e(-A_1, B_2) = e(A_1, B_2)^{-1}
+\begin{align*}
+-e(A_1, B_2) &= e(-A_1, B_2) \quad \text{(additive notation)}
+\\
+&= e(A_1, B_2)^{-1} \quad \text{(multiplicative notation)}
+\end{align*}
 $$
 
 This gives the equation:
