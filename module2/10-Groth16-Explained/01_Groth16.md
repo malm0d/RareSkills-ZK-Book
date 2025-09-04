@@ -1114,8 +1114,92 @@ And thus, `vk.IC[i]` is equals to:
 \frac{(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))G_1}{\gamma} \quad \text{for } i = 1, \dots, \ell \ (\text{where } \ell = 6)
 ```
 
+Tornado Cash's withdraw circuit has $6$ public inputs: `root` $\rightarrow$ `vk.IC[1]`, `nullifierHash` $\rightarrow$ `vk.IC[2]`, `recipient` $\rightarrow$ `vk.IC[3]`, `relayer` $\rightarrow$ `vk.IC[4]`, `fee` $\rightarrow$ `vk.IC[5]`, `refund` $\rightarrow$ `vk.IC[6]` (the exact order is fixed by the circuit/verifying key generation); and thus $\ell = 6$.
+
+As for `vk.IC[0]`, this is actually used for the constant term in the witness, i.e. the value $1$ in the first slot of $\mathbf{a}$ (the implicit public input $\mathbf{a}_0 = 1$). Tornado Cash's smart contract adds this explicitly in the computation of $[X]_1$.
+
+The exact computation of $[X]_1$ in the Tornado Cash smart contract will be described in the `verifyProof` function.
+
 ### Verifier.sol::Verifier::verifyProof (L188-230)
 
 ```solidity
+  /*
+   * @returns Whether the proof is valid given the hardcoded verifying key
+   *          above and the public inputs
+   */
+  function verifyProof(
+    bytes memory proof,
+    uint256[6] memory input
+  ) public view returns (bool) {
+    uint256[8] memory p = abi.decode(proof, (uint256[8]));
 
+    // Make sure that each element in the proof is less than the prime q
+    for (uint8 i = 0; i < p.length; i++) {
+      require(p[i] < PRIME_Q, "verifier-proof-element-gte-prime-q");
+    }
+
+    Proof memory _proof;
+    _proof.A = Pairing.G1Point(p[0], p[1]);
+    _proof.B = Pairing.G2Point([p[2], p[3]], [p[4], p[5]]);
+    _proof.C = Pairing.G1Point(p[6], p[7]);
+
+    VerifyingKey memory vk = verifyingKey();
+
+    // Compute the linear combination vk_x
+    Pairing.G1Point memory vk_x = Pairing.G1Point(0, 0);
+    vk_x = Pairing.plus(vk_x, vk.IC[0]);
+
+    // Make sure that every input is less than the snark scalar field
+    for (uint256 i = 0; i < input.length; i++) {
+      require(input[i] < SNARK_SCALAR_FIELD, "verifier-gte-snark-scalar-field");
+      vk_x = Pairing.plus(vk_x, Pairing.scalar_mul(vk.IC[i + 1], input[i]));
+    }
+
+    return Pairing.pairing(
+      Pairing.negate(_proof.A),
+      _proof.B,
+      vk.alfa1,
+      vk.beta2,
+      vk_x,
+      vk.gamma2,
+      _proof.C,
+      vk.delta2
+    );
+  }
 ```
+
+It is evident that `_proof.A` represents $[A]_1$, `_proof.B` represents $[B]_2$, and `_proof.C` represents $[C]_1$. The `vk_x` variable represents the final $[X]_1$ value, which adds up `vk.IC[0]` to `vk.IC[6]`.
+
+In the lines:
+```solidity
+    Pairing.G1Point memory vk_x = Pairing.G1Point(0, 0);
+    vk_x = Pairing.plus(vk_x, vk.IC[0]);
+```
+
+- `Pairing.G1Point(0, 0)` is how the point at infinity in $G_1$ (the additive identity) is represented. In a sense, this allows the contract to start an accumulator at "zero".
+- `vk_x = Pairing.plus(vk_x, vk.IC[0]);` simply adds the constant term in the witness to the accumulator before the rest of the public inputs:
+
+```math
+\text{vk\_x} \leftarrow [0]_1 + \text{vk.IC}[0] = \text{vk.IC}[0]
+```
+
+After this, the for-loop adds the rest of the public inputs to the accumulator:
+
+```solidity
+    for (uint256 i = 0; i < input.length; i++) {
+      require(input[i] < SNARK_SCALAR_FIELD, "verifier-gte-snark-scalar-field");
+      vk_x = Pairing.plus(vk_x, Pairing.scalar_mul(vk.IC[i + 1], input[i]));
+    }
+```
+
+Mathematically, this is equivalent to:
+
+```math
+\begin{align*}
+\text{vk\_x} &= \text{vk.IC}[0] + \sum_{i=1}^{\ell}a_i\cdot\text{vk.IC}[i] \quad (\text{for } \ell=6) 
+\\
+&= [\Psi_0]_1 + 
+
+\end{align*}
+```
+
