@@ -1092,7 +1092,7 @@ The `verifyingkey` function is used to return the hardcoded values of the follow
 - `vk.delta2` $\rightarrow [\delta]_2$
 - `vk.IC[0]` to `vk.IC[6]` $\xrightarrow{\text{constructs}} [X]_1$
 
-The variables `vk.IC[0]` to `vk.IC[6]` are elliptic curve points used to compute $[X]_1$ which is the public portion of the witness. Specifically, `vk.IC[1]` to `vk.IC[6]` are used to compute:
+The variables `vk.IC[0]` to `vk.IC[6]` are elliptic curve points used to compute $[X]_1$ which is the public portion of the witness. Specifically, `vk.IC[1]` to `vk.IC[6]` are used to compute part of $[X]_1$:
 
 ```math
 \begin{align*}
@@ -1116,7 +1116,7 @@ And thus, `vk.IC[i]` is equals to:
 
 Tornado Cash's withdraw circuit has $6$ public inputs: `root` $\rightarrow$ `vk.IC[1]`, `nullifierHash` $\rightarrow$ `vk.IC[2]`, `recipient` $\rightarrow$ `vk.IC[3]`, `relayer` $\rightarrow$ `vk.IC[4]`, `fee` $\rightarrow$ `vk.IC[5]`, `refund` $\rightarrow$ `vk.IC[6]` (the exact order is fixed by the circuit/verifying key generation); and thus $\ell = 6$.
 
-As for `vk.IC[0]`, this is actually used for the constant term in the witness, i.e. the value $1$ in the first slot of $\mathbf{a}$ (the implicit public input $\mathbf{a}_0 = 1$). Tornado Cash's smart contract adds this explicitly in the computation of $[X]_1$.
+As for `vk.IC[0]`, this is actually used for the constant term in the witness, i.e. the value $1$ in the first slot of $\mathbf{a}$ (the implicit public input $\mathbf{a}_0 = 1$). Tornado Cash's smart contract adds this explicitly in the computation of $[X]_1$. 
 
 The exact computation of $[X]_1$ in the Tornado Cash smart contract will be described in the `verifyProof` function.
 
@@ -1198,8 +1198,13 @@ Mathematically, this is equivalent to:
 \begin{align*}
 \text{vk\_x} &= \text{vk.IC}[0] + \sum_{i=1}^{\ell}a_i\cdot\text{vk.IC}[i] \quad (\text{for } \ell=6) 
 \\
-&= [\Psi_0]_1 + 
-
+&= [\Psi_0]_1 + \sum_{i=1}^{\ell}a_i[\Psi_i]_1 
+\\
+&= [\frac{\Psi_0}{\gamma}]_1 + \sum_{i=1}^{\ell}a_i[\frac{\Psi_i}{\gamma}]_1 
+\\
+&= \frac{(\alpha v_0(\tau) + \beta u_0(\tau) + w_0(\tau))G_1}{\gamma} + \sum_{i=1}^{\ell}a_i\biggl(\frac{(\alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau))G_1}{\gamma} \biggr)
+\\
 \end{align*}
 ```
 
+Note that in many expositions, including the one in this chapter (before the section on Tornado Cash), the constant term is implicitly included in the sum term (thus omitted in the formula). In the case of Tornado Cash's smart contract, the constant term is explicitly added in the Solidity code.
