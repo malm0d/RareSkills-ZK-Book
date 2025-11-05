@@ -86,11 +86,19 @@ The pairing acts like a homomorphism that translates “add $a$ times” in the 
 
 ```math
 \underbrace{aP}_{\text{add }a\text{ times}}
-\;\xrightarrow{\;e\;}
+\xrightarrow{\;e\;}
 \underbrace{e(P,Q)^a}_{\text{multiply }a\text{ times}}
 ```
 
-Since:
+Specifically:
+
+```math
+aP \ \rightarrow \ e(aP, Q) \ \rightarrow \ e(P + P + ... + P, Q) \ \rightarrow \ e(P,Q) \ \times \ e(P, Q) \ \times \ ... \ \times \ e(P, Q) \ \rightarrow \ e(P,Q)^a
+```
+
+The key here is that both groups are doing the same thing conceptually, just with different binary operators. Both groups have the same abstract structures - both are cyclic groups of the SAME order. The pairing is essentially an isomorphism that maps elements from one group to another, and preserves the structure for both groups. I.e: "Perform n operations in the domain, we also get "perform n operations in the target". Though the operations are different, but the same structural relations in the domain and target are preserved. So when we say "addition becomes multiplication," we mean the pairing transforms the additive group structure into the multiplicative group structure while preserving all the important relationships between elements.
+
+Then, since:
 
 ```math
 \begin{aligned}
@@ -112,7 +120,7 @@ e(G,abG) = e(G,G)^{ab}
 Thus we arrive at the elliptic curve bilinear pairing property:
 
 $$
-e(aG, bG) = e(abG, G) = e(G, abG)
+e(aG, bG) = e(abG, G) = e(G, abG) = e(G, G)^{ab}
 $$
 
 ## What is $e(P,Q)$ Returning?
