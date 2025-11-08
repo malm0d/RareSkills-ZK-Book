@@ -68,6 +68,18 @@ But if $y_P = y_Q$, then ONE of two things must be true:
 
 Remember that the Schwartz-Zippel Lemma is done in a finite field $p$. Thus if $d \ll p$, then situation 2 is unlikely to occur - to the point of being negligible.
 
+When we take the difference between two polynomials, we are finding the point where the two polynomials are equal. Specifically, if the difference polynomial is $P(x) - Q(x) = H(x)$:
+
+- The roots of $H(x)$ are exactly the $x$ values where $P(x) = Q(x)$ ($x$ values where $H(x) = 0$).
+
+And if the difference is a non-zero polynomial of degree $d$, then by the Schwartz-Zippel Lemma, $P(x)$ and $Q(x)$ can agree at at most
+$d$ points (when evaluated over a field):
+
+- The Fundamental Theorem of Algebra states: A non-zero polynomial of degree $d$ has at most $d$ roots.
+- This directly means:
+  - If H(x) = P(x) - Q(x) is degree $d$ and not the zero polynomial, then $H(x)$ has at most $d$ roots.
+  - Since roots of $H(x)$ are where $P(x) = Q(x)$, the polynomials can agree at most $d$ times.
+
 ### Probability of Error from the Schwartz-Zippel Lemma
 Situation 2 is extremely unlikely to occur, and the following explains why we can consider its occurrence negligible.
 
